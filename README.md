@@ -1,2 +1,2 @@
 # youtuber-debunked
-This is a fun project which downloads Bangla youtubers videos given Youtube links, extracts audios as mp3, then transcribes the audio and from the transcriptions identifies the fallacies and incorrect claims of the Youtubers on that video. 
+This project aims to automate the process of downloading videos from Bangla YouTubers using provided YouTube links, extracting audio in MP3 format, transcribing the audio content, and subsequently analyzing the transcriptions to identify logical fallacies and incorrect claims made by the YouTubers.
