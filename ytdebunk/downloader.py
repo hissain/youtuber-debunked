@@ -1,24 +1,38 @@
 import os
 import yt_dlp
+import ytdebunk.settings as settings
 
-def download_audio(video_url, output_dir="downloads", output_audio="audio.mp3"):
-    os.makedirs(output_dir, exist_ok=True)
-    os.remove(os.path.join(output_dir, output_audio)) if os.path.exists(os.path.join(output_dir, output_audio)) else None
-    
+def download_audio(video_url, start_time=None, end_time=None, verbose=False):
+    if verbose:
+        print(f"[ytdebunk-download] Downloading audio from {video_url}...")
+
+    os.makedirs(settings.OUTPUT_DIRECTORY, exist_ok=True)
+
+    if os.path.exists(settings.AUDIO_FILE):
+        os.remove(settings.AUDIO_FILE)
+
+    postprocessor_args = []
+    if start_time is not None or end_time is not None:
+        postprocessor_args = ["-ss", str(start_time)] if start_time is not None else []
+        if end_time is not None:
+            postprocessor_args += ["-to", str(end_time)]
+
     ydl_opts = {
-        'format': 'bestaudio/best',  # Select best audio format
+        'format': 'bestaudio/best',
         'postprocessors': [{
-            'key': 'FFmpegExtractAudio',  # Extract audio using FFmpeg
-            'preferredcodec': 'mp3',      # Convert to MP3
-            'preferredquality': '192',    # Set quality (kbps)
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
         }],
-        'outtmpl': os.path.join(output_dir, os.path.splitext(output_audio)[0]),
-        'noplaylist': True,  # Download a single video, not a playlist
-        'progress_hooks': [lambda d: print(f"Downloading: {d.get('_percent_str', '0%')} complete")],
-        'cachedir': False,  # Disable caching, as we're not going to download the same video again
+        'postprocessor_args': postprocessor_args,
+        'outtmpl': os.path.splitext(settings.AUDIO_FILE)[0],
+        'noplaylist': True,
+        'progress_hooks': [lambda d: print(f" Downloading: {d.get('_percent_str', '0%')} complete")],
+        'cachedir': False,
+        'quiet': not verbose,
     }
-    
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([video_url])
-    
-    print(f"Audio download complete! Saved at {os.path.join(output_dir, output_audio)}")
+        if verbose:
+            print(f"[ytdebunk-download] Audio download complete! Saved at {settings.AUDIO_FILE}")

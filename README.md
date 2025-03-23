@@ -5,6 +5,7 @@
 - Download audio from YouTube videos.  
 - Transcribe the audio content.  
 - Optionally enhance the transcription using the **Gemini API**.  
+- Optionally detect logical faults in the transctiption using the **Gemini API**.  
 
 This tool is particularly useful for analyzing transcriptions to identify **logical fallacies** and **incorrect claims** made by YouTubers.  
 
@@ -40,22 +41,25 @@ The `ytdebunk.py` script provides a **command-line interface (CLI)** with severa
 | Option                  | Description |
 |-------------------------|-------------|
 | `-e, --enhance` (bool) | Enhance the transcription using the **Gemini API**. *(Default: False)* |
-| `-d, --detect` (bool) | Detect logical fallacies, bias, irony, faults in the transcription using **Gemini API**. *(Default: False)* |
-| `-o, --output_file` (str) | Path to save the final transcription. *(Default: `downloads/transcription.txt`)* |
+| `-d, --detect` (bool) | Detect logical faults in the transcription using **Gemini API**. *(Default: False)* |
 | `-v, --verbose` (bool) | Increase output verbosity. |
-| `-t, --token` (str) | API token for the **Gemini API** *(Required if `--enhance` is enabled)*. |
+| `-t, --token` (str) | API token for the **Gemini API** *(Required if `--enhance` or `--detect`is enabled)*. |
+| `-st, --start_time` (float) | Start time of the audio clip in seconds |
+| `-et, --end_time` (float) | End time of the audio clip in seconds |
 
 ### **Example Usage**  
 
 ```bash
-ytdebunk "https://www.youtube.com/watch?v=example" -e -o output.txt -v -t YOUR_GEMINI_API_TOKEN
+ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v -t YOUR_GEMINI_API_TOKEN
 ```
 
 
 ```bash
 export GEMINI_API_TOKEN="your_api_key"
-ytdebunk "https://www.youtube.com/watch?v=example" #when Gemini API key is in environment
+ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v #when Gemini API key is in environment
 ```
+
+See an example notebook [Example Notebook](experiment/exp.ipynb) file for details usage.  
 
 ## **Environment Variables**  
 If preferred, you can set the **Gemini API token** as an environment variable instead of passing it as a CLI argument:
@@ -76,11 +80,15 @@ export GEMINI_API_TOKEN="your_api_key"
    - If `--enhance` is enabled, the script uses `enhance_transcription` from `ytdebunk.refiner` to refine the transcription using the **Gemini API**.  
    - The API token must be provided via `--token` or as an **environment variable**.  
 
-4. **Save Transcription**  
-   - The final transcription (raw or enhanced) is saved to the specified output file.  
+3. **Detect Logical Faults** *(Optional)*  
+   - If `--detect` is enabled, the script uses `detect_logical_faults` from `ytdebunk.philosopher` to detect logical fults, fallacies, bias, irony and so on in the transcription using the **Gemini API**.  
+   - The API token must be provided via `--token` or as an **environment variable**.  
+
+5. **Save Transcription**  
+   - The final transcription and logical faults (raw or enhanced) are saved to the ./download folder.  
 
 ## **Error Handling**  
-- If `--enhance` is enabled but no **Gemini API token** is provided, the script prints an **error message** and exits.  
+- If `--enhance` or `--detect` are enabled but no **Gemini API token** is provided, the script prints an **error message** and exits.
 
 ## **License**  
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.  
@@ -88,4 +96,5 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 
 ## Contribution and Contact
 
-You can Contact to the author hissain.khan@gmail.com
+You can fork this project and submit pull request in the project. 
+Please contact to the author at hissain.khan@gmail.com

@@ -2,6 +2,7 @@ import librosa
 import torch
 import torchaudio
 import numpy as np
+import ytdebunk.settings as settings
 from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
@@ -10,7 +11,7 @@ chunk_duration = 30  # Seconds per chunk
 sampling_rate_target = 16000
 
 def load_model(model_path, device):
-    print("Loading model...")
+    print("[ytdebunk-transcriber] Loading model...")
     feature_extractor = WhisperFeatureExtractor.from_pretrained(model_path)
     tokenizer = WhisperTokenizer.from_pretrained(model_path)
     processor = WhisperProcessor.from_pretrained(model_path)
@@ -18,10 +19,11 @@ def load_model(model_path, device):
     return feature_extractor, tokenizer, processor, model
 
 def transcribe_audio(
-        audio_path="downloads/audio.mp3", 
-        start_time=0.0, 
+        audio_path=settings.AUDIO_FILE, 
+        start_time=None, 
         end_time=None,
-        model_path="bangla-speech-processing/BanglaASR"):
+        model_path="bangla-speech-processing/BanglaASR",
+        verbose=False):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     feature_extractor, tokenizer, processor, model = load_model(model_path, device)
@@ -30,7 +32,7 @@ def transcribe_audio(
     speech_array = speech_array[0].numpy()
     speech_array = librosa.resample(speech_array, orig_sr=sampling_rate, target_sr=sampling_rate_target)
     
-    start_sample = int(start_time * sampling_rate_target)
+    start_sample = int((start_time or 0) * sampling_rate_target)
     end_sample = int(end_time * sampling_rate_target) if end_time is not None else len(speech_array)
     speech_array = speech_array[start_sample:end_sample]
     
@@ -39,9 +41,10 @@ def transcribe_audio(
 
     transcriptions = []
 
-    print("Transcribing audio...")
+    print(f"[ytdebunk-transcriber] Transcribing {num_chunks} chunks...")
     for i in range(num_chunks):
-        print(f"Processing chunk {i + 1} of {num_chunks}...")
+        if verbose:
+            print(f"[ytdebunk-transcriber] Transcribing chunk {i + 1} of {num_chunks}...")
         start = i * chunk_size
         end = min((i + 1) * chunk_size, len(speech_array))
         
@@ -53,4 +56,8 @@ def transcribe_audio(
         transcriptions.append(transcription)
 
     full_transcription = " ".join(transcriptions)
+
+    if verbose:
+        print(f"[ytdebunk-transcriber] Transcription complete!")
+
     return full_transcription
