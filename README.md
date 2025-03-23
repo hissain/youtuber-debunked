@@ -8,12 +8,18 @@
 
 This tool is particularly useful for analyzing transcriptions to identify **logical fallacies** and **incorrect claims** made by YouTubers.  
 
-## Installation  
+## Installation 
 
-To install the required dependencies, run:  
+You can install from PyPI using,
 
 ```sh
-pip install -r requirements.txt
+pip install ytdebunk
+```
+
+Alternatively, for latest updated please try installing directly from Github using:
+
+```sh
+pip install git+https://github.com/hissain/youtuber-debunked.git
 ```
 
 ## Usage  
@@ -33,8 +39,14 @@ The `ytdebunk.py` script provides a **command-line interface (CLI)** with severa
 
 ### **Example Usage**  
 
-```sh
-python ytdebunk.py "https://www.youtube.com/watch?v=example" -e -o output.txt -v -t YOUR_GEMINI_API_TOKEN
+```bash
+ytdebunk "https://www.youtube.com/watch?v=example" -e -o output.txt -v -t YOUR_GEMINI_API_TOKEN
+```
+
+
+```bash
+export GEMINI_API_TOKEN="your_api_key"
+ytdebunk "https://www.youtube.com/watch?v=example" #when Gemini API key is in environment
 ```
 
 ## **Environment Variables**  
@@ -65,3 +77,7 @@ export GEMINI_API_TOKEN="your_api_key"
 ## **License**  
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.  
 
+
+## Contribution and Contact
+
+You can Contact to the author hissain.khan@gmail.com
