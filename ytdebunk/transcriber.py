@@ -3,6 +3,8 @@ import torch
 import torchaudio
 import numpy as np
 from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
 chunk_duration = 30  # Seconds per chunk
 sampling_rate_target = 16000

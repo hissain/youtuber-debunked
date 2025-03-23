@@ -2,15 +2,17 @@ from setuptools import setup, find_packages
 
 setup(
     name="ytdebunk",
-    version="1.0.0",
+    version="1.0.1",
     packages=find_packages(),
     install_requires=[
-        "requests",
-        "python-dotenv",
-        "google-generativeai",
-        "yt-dlp",
-        "torch",
-        "torchaudio",
+        "numpy<2",
+        "python-dotenv==1.0.1",
+        "google-generativeai==0.8.4",
+        "yt-dlp==2025.3.21",
+        "torch==2.1.0",
+        "torchaudio==2.1.0",
+        "librosa==0.11.0",
+        "transformers==4.36.2",
     ],
     entry_points={"console_scripts": ["ytdebunk=ytdebunk.ytdebunk:main"]},
     author="Md. Sazzad Hissain Khan",
@@ -31,6 +33,7 @@ setup(
         "ai", 
         "bangla", 
         "bengali", 
-        "geminai"
+        "geminai",
+        "librosa",
         ],
 )

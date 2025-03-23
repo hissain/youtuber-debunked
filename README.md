@@ -10,7 +10,14 @@ This tool is particularly useful for analyzing transcriptions to identify **logi
 
 ## Installation 
 
-You can install from PyPI using,
+For avoiding conflicts better create a virtual environment and start working on it:
+
+```sh
+python3.11 -m venv .venv
+source .venv/bin/activate
+```
+
+Now, you can install from PyPI using,
 
 ```sh
 pip install ytdebunk
