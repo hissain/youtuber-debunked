@@ -11,7 +11,7 @@ chunk_duration = 30  # Seconds per chunk
 sampling_rate_target = 16000
 
 def load_model(model_path, device):
-    print("[ytdebunk-transcriber] Loading model...")
+    print("[ytdebunk-transcriber] Loading WhisperFeatureExtractor model...")
     feature_extractor = WhisperFeatureExtractor.from_pretrained(model_path)
     tokenizer = WhisperTokenizer.from_pretrained(model_path)
     processor = WhisperProcessor.from_pretrained(model_path)
@@ -22,7 +22,7 @@ def transcribe_audio(
         audio_path=settings.AUDIO_FILE, 
         start_time=None, 
         end_time=None,
-        model_path="bangla-speech-processing/BanglaASR",
+        model_path=settings.TRANSCRIPTION_MODEL,
         verbose=False):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

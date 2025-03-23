@@ -19,6 +19,7 @@ def main():
     parser.add_argument("-t", "--token", type=str, help="API token for the Gemini API")
     parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds")
     parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds")
+    parser.add_argument("-m", "--model", type=str, default=settings.TRANSCRIPTION_MODEL, help="Path to the transcription (WhisperFeatureExtractor) model")
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
     args = parser.parse_args()
@@ -37,7 +38,7 @@ def main():
         return
     
     download_audio(args.yt_video_url, start_time=st, end_time=et, verbose=args.verbose)
-    transcription = transcribe_audio(verbose=args.verbose, start_time=st, end_time=et)
+    transcription = transcribe_audio(verbose=args.verbose, start_time=st, end_time=et, model_path=args.model)
     
     with open(settings.TRANSCRIPTION_FILE, "w", encoding="utf-8") as f:
             f.write(transcription)
