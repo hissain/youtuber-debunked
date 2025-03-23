@@ -40,6 +40,7 @@ The `ytdebunk.py` script provides a **command-line interface (CLI)** with severa
 | Option                  | Description |
 |-------------------------|-------------|
 | `-e, --enhance` (bool) | Enhance the transcription using the **Gemini API**. *(Default: False)* |
+| `-d, --detect` (bool) | Detect logical fallacies, bias, irony, faults in the transcription using **Gemini API**. *(Default: False)* |
 | `-o, --output_file` (str) | Path to save the final transcription. *(Default: `downloads/transcription.txt`)* |
 | `-v, --verbose` (bool) | Increase output verbosity. |
 | `-t, --token` (str) | API token for the **Gemini API** *(Required if `--enhance` is enabled)*. |
