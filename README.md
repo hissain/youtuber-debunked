@@ -1,13 +1,21 @@
 # ytdebunk  
 
 ## Overview  
+### Current Features:
 `ytdebunk` is a command-line tool designed to:  
 - Download audio from YouTube videos.  
 - Transcribe the audio content.  
 - Optionally enhance the transcription using the **Gemini API**.  
-- Optionally detect logical faults in the transctiption using the **Gemini API**.  
+- Optionally detect logical faults in the transctiption using the **Gemini API**.
 
-This tool is particularly useful for analyzing transcriptions to identify **logical fallacies** and **incorrect claims** made by YouTubers.  
+### Features in queue:
+- Classifying assertive claims from the transcription
+- Factchecking and validation of the claims from reliable source using online search capabilities
+- Reorganizing of the factual faults and logical faulst
+- Preparing script for a hypothetical debunker using generative AI agents
+- Synthesizing the script to create audio and generative debunk videos
+
+This tool is particularly useful for analyzing transcriptions to identify **logical fallacies** and **incorrect claims** made by YouTubers and prepare a debunk video.
 
 ## Installation 
 
@@ -32,7 +40,7 @@ pip install git+https://github.com/hissain/youtuber-debunked.git
 
 ## Usage  
 
-The `ytdebunk.py` script provides a **command-line interface (CLI)** with several options.  
+The `ytdebunk` is a **command-line interface (CLI)** with several options.
 
 ### **Arguments**  
 - `video_url` (**str**) – URL of the YouTube video to download audio from.  
