@@ -48,15 +48,16 @@ The `ytdebunk` is a **command-line interface (CLI)** with several options.
 ### **Options**  
 | Option                  | Description |
 |-------------------------|-------------|
+| `-l, --language` (str) | Language (code) of the transcription. Valid: [bn, en], default: en |
 | `-e, --enhance` (bool) | Enhance the transcription using the **Gemini API**. *(Default: False)* |
 | `-d, --detect` (bool) | Detect logical faults in the transcription using **Gemini API**. *(Default: False)* |
-| `-v, --verbose` (bool) | Increase output verbosity. |
+| `-v, --verbose` (bool) | Increase verbosity in logging. |
 | `-t, --token` (str) | API token for the **Gemini API** *(Required if `--enhance` or `--detect`is enabled)*. |
 | `-st, --start_time` (float) | Start time of the audio clip in seconds |
 | `-et, --end_time` (float) | End time of the audio clip in seconds |
 | `-m, --model` (str) | A transcription model name from Huggingface (WhisperFeatureExtractor) |
 
-### **Example Usage**  
+#### **Example Usage**  
 
 ```bash
 ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v -t YOUR_GEMINI_API_TOKEN
@@ -86,7 +87,7 @@ Run the app.py using streamlit
 streamlit run app.py
 ```
 
-### Screenshots of the Streamlit App
+#### *Screenshots of the Streamlit App*
 ![Query Fields](assets/Screenshot_Q.png)
 ![Transcription Result](assets/Screenshot_R.png)
 ![Logical Fults Detected](assets/Screenshot_F.png)

@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import ytdebunk.settings as settings
 import os
 
 from dotenv import load_dotenv
@@ -20,8 +21,14 @@ def chunk_text(text, max_chars=3000):
 
     return chunks
 
-enchacement_prompt = """
-You are a Bangla language expert. You have been asked to improve the following Bangla transcription by correcting errors and enhancing readability.
+
+def enhance_transcription(transcription, 
+                          key=os.getenv("GENAI_API_KEY"), 
+                          verbose=False, 
+                          language=settings.LANUAGE_DEFAULT):
+
+    enchacement_prompt = f"""
+You are a {settings.TRANSCRIPTION_MODEL_NAMES[language]} language expert. You have been asked to improve the following {settings.TRANSCRIPTION_MODEL_NAMES[language]} transcription by correcting errors and enhancing readability.
 
 IMPORTANT:
 1. Return only the transcription without any additional information or instructions.
@@ -33,7 +40,6 @@ Here is the transcription:
 
 """
 
-def enhance_transcription(transcription, key=os.getenv("GENAI_API_KEY"), verbose=False):
     genai.configure(api_key=key)
     model = genai.GenerativeModel('gemini-1.5-flash')
     chunks = chunk_text(transcription)

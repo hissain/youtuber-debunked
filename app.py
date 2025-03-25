@@ -2,7 +2,7 @@ import streamlit as st
 from ytdebunk.ytdebunk import main as ytdebunk_main
 import sys
 
-def run_ytdebunk(video_url, enhance, detect, verbose, token):
+def run_ytdebunk(video_url, language, enhance, detect, verbose, token):
 
     args = [video_url]
     if enhance:
@@ -13,14 +13,18 @@ def run_ytdebunk(video_url, enhance, detect, verbose, token):
         args.append('--verbose')
     if token:
         args.extend(['--token', token])
+    if language == "Bengali":
+        args.append('--language')
+        args.append('bn')
 
     sys.argv = ['ytdebunk'] + args
     return ytdebunk_main()
 
 def main():
-    st.title("Bangla YouTube Debunking Tool")
+    st.title("YouTuber Debunking Tool")
 
     video_url = st.text_input("YouTube Video URL")
+    language = st.selectbox("Language", ["English", "Bengali"])
     enhance = st.checkbox("Enhance Transcription")
     detect = st.checkbox("Detect Logical Fallacies")
     verbose = st.checkbox("Verbose Output")

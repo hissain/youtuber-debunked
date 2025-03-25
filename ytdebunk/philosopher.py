@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+import ytdebunk.settings as settings
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -21,18 +22,25 @@ def chunk_text(text, max_chars=3000):
 
     return chunks
 
-fault_detection_prompt = """
-You are a Bangla language expert and a philosopher specializing in detecting logical flows, fallacies, bias, and irony in a Bangla speaker's content. Please be precise and critical while evaluating a piece of Bangla content from a Bangla-speaking YouTuber.
+
+
+def detect_logical_faults(transcription, 
+                          key=os.getenv("GENAI_API_KEY"), 
+                          verbose=False, 
+                          language=settings.LANUAGE_DEFAULT):
+
+    fault_detection_prompt = f"""
+You are a {settings.TRANSCRIPTION_MODEL_NAMES[language]} language expert and a philosopher specializing in detecting logical flows, fallacies, bias, and irony in a {settings.TRANSCRIPTION_MODEL_NAMES[language]} speaker's content. 
+Please be precise and critical while evaluating a piece of {settings.TRANSCRIPTION_MODEL_NAMES[language]} content from a {settings.TRANSCRIPTION_MODEL_NAMES[language]}-speaking YouTuber.
 
 IMPORTANT:
-1. Generate in Bangla only.
+1. Generate in {settings.TRANSCRIPTION_MODEL_NAMES[language]} only.
 2. Keep the fallacy, bias, irony, and logical faults in the same order as they appear in the content.
 3. Keep the summary concise and to the point and withing single large paragraph without showing point by point.
 
 Here is the speaker's text:
 """
 
-def detect_logical_faults(transcription, key=os.getenv("GENAI_API_KEY"), verbose=False):
     genai.configure(api_key=key)
     model = genai.GenerativeModel('gemini-1.5-flash')
 

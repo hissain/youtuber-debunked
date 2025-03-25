@@ -1,6 +1,7 @@
 import os
 import yt_dlp
 import ytdebunk.settings as settings
+# import settings as settings
 
 def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=True):
     if verbose:
@@ -37,3 +38,6 @@ def download_audio(video_url, start_time=None, end_time=None, verbose=False, ign
         ydl.download([video_url])
         if verbose:
             print(f"[ytdebunk-download] Audio download complete! Saved at {settings.AUDIO_FILE}")
+
+if __name__ == "__main__":
+    download_audio("https://www.youtube.com/shorts/l8UDM4bOhpU", verbose=True)

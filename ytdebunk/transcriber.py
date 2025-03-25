@@ -22,9 +22,10 @@ def transcribe_audio(
         audio_path=settings.AUDIO_FILE, 
         start_time=None, 
         end_time=None,
-        model_path=settings.TRANSCRIPTION_MODEL,
-        verbose=False):
+        verbose=False,
+        language=settings.LANUAGE_DEFAULT):
     
+    model_path = settings.TRANSCRIPTION_MODELS[language]
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     feature_extractor, tokenizer, processor, model = load_model(model_path, device)
     
