@@ -88,9 +88,12 @@ streamlit run app.py
 ```
 
 #### *Screenshots of the Streamlit App*
-![Query Fields](assets/Screenshot_Q.png)
-![Transcription Result](assets/Screenshot_R.png)
-![Logical Fults Detected](assets/Screenshot_F.png)
+![Query Fields English](assets/Screenshot_Q_e.png)
+![Transcription Result English](assets/Screenshot_R_e.png)
+
+![Query Fields Bangla](assets/Screenshot_Q.png)
+![Transcription Result Bangla](assets/Screenshot_R.png)
+![Logical Fults Detected Bangla](assets/Screenshot_F.png)
 
 ## **Environment Variables**  
 If preferred, you can set the **Gemini API token** as an environment variable instead of passing it as a CLI argument:

@@ -32,7 +32,7 @@ def main():
 
     if st.button("Transcribe and Debunk This Video"):
         with st.spinner('Processing...'):
-            transcription, fallacies = run_ytdebunk(video_url, enhance, detect, verbose, token)
+            transcription, fallacies = run_ytdebunk(video_url, language, enhance, detect, verbose, token)
             
             if transcription:
                 st.success("ytdebunk has been executed successfully.")
@@ -40,10 +40,11 @@ def main():
             else:
                 st.error("Failed to generate transcription. Please check the logs for more details.")
 
-            if fallacies:
-                st.text_area("Appearant Logical Faults:", fallacies, height=300)
-            else:
-                st.error("Failed to generate logical faults. Please check the logs for more details.")    
+            if detect:
+                if fallacies:
+                    st.text_area("Apparent Logical Faults in the Transcription:", fallacies, height=300)
+                else:
+                    st.error("Failed to generate logical faults. Please check the logs for more details.")    
 
 if __name__ == "__main__":
     main()
