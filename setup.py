@@ -13,6 +13,7 @@ setup(
         "torchaudio==2.1.0",
         "librosa==0.11.0",
         "transformers==4.36.2",
+        "streamlit",
     ],
     entry_points={"console_scripts": ["ytdebunk=ytdebunk.ytdebunk:main"]},
     author="Md. Sazzad Hissain Khan",
@@ -35,5 +36,6 @@ setup(
         "bengali", 
         "geminai",
         "librosa",
+        "streamlit",
         ],
 )

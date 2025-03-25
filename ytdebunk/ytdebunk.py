@@ -68,3 +68,5 @@ def main():
         print(f"-"*80)
         print(f"[ytdebunk] LOGICAL FAULTS:\n{logical_faults}")
         print(f"*"*80)
+
+    return transcription, logical_faults

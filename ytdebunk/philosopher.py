@@ -21,7 +21,7 @@ def chunk_text(text, max_chars=3000):
 
     return chunks
 
-enhancement_prompt = """
+fault_detection_prompt = """
 You are a Bangla language expert and a philosopher specializing in detecting logical flows, fallacies, bias, and irony in a Bangla speaker's content. Please be precise and critical while evaluating a piece of Bangla content from a Bangla-speaking YouTuber.
 
 IMPORTANT:
@@ -43,7 +43,7 @@ def detect_logical_faults(transcription, key=os.getenv("GENAI_API_KEY"), verbose
     for idx, chunk in enumerate(chunks):
         if verbose:
             print(f"[ytdebunk-analyzer] Analyzing chunk {idx + 1} of {len(chunks)}")
-        prompt = enhancement_prompt + chunk
+        prompt = fault_detection_prompt + chunk
         try:
             response = model.generate_content(prompt)
             refined_chunks.append(response.text.strip())

@@ -9,11 +9,11 @@
 - Optionally detect logical faults in the transctiption using the **Gemini API**.
 
 ### Features in queue:
-- Classifying assertive claims from the transcription
-- Factchecking and validation of the claims from reliable source using online search capabilities
-- Reorganizing of the factual faults and logical faulst
-- Preparing script for a hypothetical debunker using generative AI agents
-- Synthesizing the script to create audio and generative debunk videos
+- Classifying assertive claims from the transcription.
+- Fact-checking and validation of the claims from reliable source using online search and agentic AI.
+- Re-organizing the factual faults and logical faults.
+- Preparing a script for a hypothetical debunker charecter using generative AI (or AI Agents).
+- Synthesizing the script to create an audio and a video using generative AI (or AI Agents).
 
 This tool is particularly useful for analyzing transcriptions to identify **logical fallacies** and **incorrect claims** made by YouTubers and prepare a debunk video.
 
@@ -38,7 +38,7 @@ Alternatively, for latest updated please try installing directly from Github usi
 pip install git+https://github.com/hissain/youtuber-debunked.git
 ```
 
-## Usage  
+## Usage  (The CLI Tool)
 
 The `ytdebunk` is a **command-line interface (CLI)** with several options.
 
@@ -54,6 +54,7 @@ The `ytdebunk` is a **command-line interface (CLI)** with several options.
 | `-t, --token` (str) | API token for the **Gemini API** *(Required if `--enhance` or `--detect`is enabled)*. |
 | `-st, --start_time` (float) | Start time of the audio clip in seconds |
 | `-et, --end_time` (float) | End time of the audio clip in seconds |
+| `-m, --model` (str) | A transcription model name from Huggingface (WhisperFeatureExtractor) |
 
 ### **Example Usage**  
 
@@ -68,6 +69,27 @@ ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v #when Gemini API key
 ```
 
 See an example notebook [Example Notebook](experiment/exp.ipynb) file for details usage.  
+
+## Usage  (The Streamlit App)
+
+You can simply run the streamlit app to see the demo.
+
+Install the streamlit using pip
+
+```bash
+pip install streamlit
+```
+
+Run the app.py using streamlit
+
+```bash
+streamlit run app.py
+```
+
+### Screenshots of the Streamlit App
+![Query Fields](assets/Screenshot_Q.png)
+![Transcription Result](assets/Screenshot_R.png)
+![Logical Fults Detected](assets/Screenshot_F.png)
 
 ## **Environment Variables**  
 If preferred, you can set the **Gemini API token** as an environment variable instead of passing it as a CLI argument:
