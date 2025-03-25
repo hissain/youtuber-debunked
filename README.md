@@ -7,6 +7,7 @@
 - Transcribe the audio content.  
 - Optionally enhance the transcription using the **Gemini API**.  
 - Optionally detect logical faults in the transctiption using the **Gemini API**.
+- An streamlit app for demo purpose
 
 ### Features in queue:
 - Classifying assertive claims from the transcription.
