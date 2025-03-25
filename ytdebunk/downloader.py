@@ -2,7 +2,7 @@ import os
 import yt_dlp
 import ytdebunk.settings as settings
 
-def download_audio(video_url, start_time=None, end_time=None, verbose=False):
+def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=True):
     if verbose:
         print(f"[ytdebunk-download] Downloading audio from {video_url}...")
 
@@ -30,6 +30,7 @@ def download_audio(video_url, start_time=None, end_time=None, verbose=False):
         'progress_hooks': [lambda d: print(f" Downloading: {d.get('_percent_str', '0%')} complete")],
         'cachedir': False,
         'quiet': not verbose,
+        'nocheckcertificate': ignore_ssl_cert,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

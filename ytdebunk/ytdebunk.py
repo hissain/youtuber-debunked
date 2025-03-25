@@ -20,6 +20,7 @@ def main():
     parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds")
     parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds")
     parser.add_argument("-m", "--model", type=str, default=settings.TRANSCRIPTION_MODEL, help="Path to the transcription (WhisperFeatureExtractor) model")
+    parser.add_argument("-is", "--ignore_ssl", action="store_true", default=True, help="Ignore SSL certificate errors (nocheckcertificate)")
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
     args = parser.parse_args()
