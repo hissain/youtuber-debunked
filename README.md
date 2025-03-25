@@ -38,7 +38,7 @@ Alternatively, for latest updated please try installing directly from Github usi
 pip install git+https://github.com/hissain/youtuber-debunked.git
 ```
 
-## Usage  (The CLI Tool)
+### Usage  (The CLI Tool)
 
 The `ytdebunk` is a **command-line interface (CLI)** with several options.
 
@@ -70,7 +70,7 @@ ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v #when Gemini API key
 
 See an example notebook [Example Notebook](experiment/exp.ipynb) file for details usage.  
 
-## Usage  (The Streamlit App)
+### Usage (The Streamlit App)
 
 You can simply run the streamlit app to see the demo.
 
