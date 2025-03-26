@@ -81,7 +81,9 @@ psutil==7.0.0
 ptyprocess==0.7.0
 pure_eval==0.2.3
 # pyarrow==18.0.0.dev206
-https://pypi.fury.io/arrow-nightlies/-/ver_25cAT9/pyarrow-18.0.0.dev206.tar.gz#md5=ed5ee54db491a05f7502302581c34ec9
+# OR
+# --extra-index-url https://pypi.fury.io/arrow-nightlies/
+# pyarrow --prefer-binary --pre
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
