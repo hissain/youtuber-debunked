@@ -12,7 +12,8 @@ class StreamlitLogger(logging.StreamHandler):
     def emit(self, record):
         log_entry = self.format(record)
         self.log_messages.append(log_entry)
-        self.placeholder.text("\n".join(self.log_messages))
+        log_text = "\n".join(self.log_messages)
+        self.placeholder.markdown(f"### Logs\n\n```text\n{log_text}\n```")
 
 def run_ytdebunk(video_url, language, enhance, detect, verbose, token, log_placeholder):
 
