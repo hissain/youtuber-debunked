@@ -107,6 +107,7 @@ def transcribe_audio(
     model_path = settings.TRANSCRIPTION_MODELS[language]
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info("[ytdebunk-transcriber] Loading Whisper model components...")
+    logger.info("[ytdebunk-transcriber] Loading may take a few minutes if you're running for the first time.")
     feature_extractor, tokenizer, processor, model = load_model(model_path, device)
     
     # Load and process audio
@@ -151,8 +152,6 @@ def transcribe_audio(
         transcriptions.append(transcription)
     
     full_transcription = " ".join(transcriptions)
-    
-    if verbose:
-        logger.info("[ytdebunk-transcriber] Transcription complete!")
+    logger.info("[ytdebunk-transcriber] Transcription complete!")
     
     return full_transcription

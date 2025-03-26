@@ -19,8 +19,8 @@ def main():
     parser.add_argument("-d", "--detect", action="store_true", default=False, help="Detect logical fallacies, bias, irony, faults in the transcription")
     parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase output verbosity")
     parser.add_argument("-t", "--token", type=str, help="API token for the Gemini API")
-    parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds for trasncription")
-    parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds for trasncription")
+    parser.add_argument("-st", "--start_time", type=int, default=None, help="Start time of the audio clip in seconds for trasncription")
+    parser.add_argument("-et", "--end_time", type=int, default=None, help="End time of the audio clip in seconds for trasncription")
     parser.add_argument("-is", "--ignore_ssl", action="store_true", default=False, help="Ignore SSL certificate errors (nocheckcertificate)")
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
@@ -32,11 +32,33 @@ def main():
     console_handler.setLevel(logging.INFO)
     logger.addHandler(console_handler)
 
-    if args.enhance:
-        token = args.token or os.getenv("GEMINI_API_TOKEN") or os.getenv("GEMINI_API_KEY")
+    if args.verbose:
+        logger.info(f"[ytdebunk] Analyzing YouTube video: {args.yt_video_url}")
+        logger.info(f"[ytdebunk] Language: {args.language}")
+        logger.info(f"[ytdebunk] Enhance: {args.enhance}")
+        logger.info(f"[ytdebunk] Detect: {args.detect}")
+        logger.info(f"[ytdebunk] Start Time: {args.start_time}")
+        logger.info(f"[ytdebunk] End Time: {args.end_time}")
+        logger.info(f"[ytdebunk] Ignore SSL: {args.ignore_ssl}")
+        logger.info(f"[ytdebunk] Verbose: {args.verbose}")
+        # logger.info(f"[ytdebunk] API Token: {args.token}")
+
+    if args.token:
+        logger.info(f"[ytdebunk] Using API token from argument instead of environment.")
+    else:
+        logger.info(f"[ytdebunk] No API token provided. Will use the token from environment.")
+        if os.getenv("GEMINI_API_KEY"):
+            logger.info(f"[ytdebunk] API token found in environment.")
+        else:
+            logger.info(f"[ytdebunk] No API token found in environment.")
+            return None, None
+
+
+    if args.enhance or args.detect:
+        token = args.token or os.getenv("GEMINI_API_KEY")
         if not token:
-            logger.error("[ytdebunk] Enhancement is enabled but no Gemini API token provided or found in env.")
-            return
+            logger.error("[ytdebunk] Enhancement/Detection is enabled but no Gemini API token provided or found in env.")
+            return None, None
 
     st = args.start_time
     et = args.end_time
@@ -44,11 +66,11 @@ def main():
 
     if ln is not None and ln not in ["bn", "en"]:
         logger.error("[ytdebunk] Invalid language. Valid: [bn, en]")
-        return
+        return None, None
     
     if st is not None and et is not None and st >= et:
         logger.error("[ytdebunk] Start time must be less than end time.")
-        return
+        return None, None
     
     download_audio(args.yt_video_url, 
                    start_time=st, 

@@ -13,22 +13,32 @@ class StreamlitLogger(logging.StreamHandler):
         log_entry = self.format(record)
         self.log_messages.append(log_entry)
         log_text = "\n".join(self.log_messages)
-        self.placeholder.markdown(f"### Logs\n\n```text\n{log_text}\n```")
+        self.placeholder.markdown(f"#### Logs\n\n```text\n{log_text}\n```")
 
-def run_ytdebunk(video_url, language, enhance, detect, verbose, token, log_placeholder):
+def run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose, token, log_placeholder):
 
     args = [video_url]
+
+    if st_time is not None:
+        args.extend(['--start_time', str(st_time)])
+    if et_time is not None:
+        args.extend(['--end_time', str(et_time)])
+
     if enhance:
         args.append('--enhance')
     if detect:
-        args.extend(['--detect'])
+        args.append('--detect')
     if verbose:
         args.append('--verbose')
     if token:
         args.extend(['--token', token])
+    
     if language == "Bengali":
-        args.append('--language')
-        args.append('bn')
+        args.extend(['--language', 'bn'])
+    elif language == "English":
+        args.extend(['--language', 'en'])
+    else:
+        args.extend(['--language', 'en'])
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -36,23 +46,38 @@ def run_ytdebunk(video_url, language, enhance, detect, verbose, token, log_place
     logger.addHandler(streamlit_handler)
 
     sys.argv = ['ytdebunk'] + args
-    return ytdebunk_main()
+    result = ytdebunk_main()
+
+    if result is None:
+        return None, None
+    return result
 
 def main():
     st.title("YouTuber Debunking Tool")
+    st.info("This tool transcribes YouTube videos and detects logical fallacies in the transcription using AI.")
+    st.markdown("### Instructions\n1. Paste the YouTube video URL in the input box below.\n2. Select the language of the video.\n3. Check the boxes to enhance the transcription and detect logical fallacies.\n4. Enter your Gemini API token if you want to enhance the transcription.\n5. Click the button to start the process.\n6. The transcription and logical fallacies will be displayed below.")
 
     video_url = st.text_input("YouTube Video URL")
     language = st.selectbox("Language", ["English", "Bengali"])
+    st_time_input = st.text_input("Start Time (in seconds)")
+    et_time_input = st.text_input("End Time (in seconds)")
     enhance = st.checkbox("Enhance Transcription")
     detect = st.checkbox("Detect Logical Fallacies")
     verbose = st.checkbox("Verbose Output")
     token = st.text_input("Gemini API Token", type="password")
 
+    try:
+        st_time = int(st_time_input) if st_time_input else None
+        et_time = int(et_time_input) if et_time_input else None
+    except ValueError:
+        st.error("Please enter valid integers for start and end times.")
+        return
+
     log_placeholder = st.empty()
 
     if st.button("Transcribe and Debunk This Video"):
         with st.spinner('Processing...'):
-            transcription, fallacies = run_ytdebunk(video_url, language, enhance, detect, verbose, token, log_placeholder)
+            transcription, fallacies = run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose, token, log_placeholder)
             
             if transcription:
                 st.success("ytdebunk has been executed successfully.")

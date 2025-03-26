@@ -66,13 +66,13 @@ pip install git+https://github.com/hissain/youtuber-debunked.git
 #### **Example Usage**
 
 ```bash
-ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v -t YOUR_GEMINI_API_TOKEN
+ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v -t YOUR_GEMINI_API_KEY
 ```
 
 Alternatively, using an environment variable:
 
 ```bash
-export GEMINI_API_TOKEN="your_api_key"
+export GEMINI_API_KEY="your_api_key"
 ytdebunk "https://www.youtube.com/watch?v=example" -e -d -v
 ```
 
@@ -107,7 +107,7 @@ streamlit run app.py
 Set the **Gemini API token** as an environment variable:
 
 ```sh
-export GEMINI_API_TOKEN="your_api_key"
+export GEMINI_API_KEY="your_api_key"
 ```
 
 ## **Detailed Process**
