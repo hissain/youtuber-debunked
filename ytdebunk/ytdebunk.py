@@ -7,19 +7,18 @@ from ytdebunk.transcriber import transcribe_audio
 from ytdebunk.refiner import enhance_transcription
 from ytdebunk.philosopher import detect_logical_faults
 
-
 load_dotenv()
 
 def main():
-    parser = argparse.ArgumentParser(description="Download audio from a YouTube video.")
-    parser.add_argument("yt_video_url", type=str, help="URL of the YouTube video")
+    parser = argparse.ArgumentParser(description="This command aims to automate the extraction of MP3 audio from a given YouTube video link, transcribe the audio content, and analyze the transcriptions using Agentic AI to identify logical fallacies and incorrect claims made by YouTubers.")
+    parser.add_argument("yt_video_url", type=str, help="URL of the YouTube video (shorts, video) to be analyzed")
     parser.add_argument("-l", "--language", type=str, default="en", help="Language (code) of the transcription. Valid: [bn, en], default: en")
-    parser.add_argument("-e", "--enhance", action="store_true", help="Enhance the transcription")
-    parser.add_argument("-d", "--detect", action="store_true", help="Detect logical fallacies, bias, irony, faults in the transcription")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
+    parser.add_argument("-e", "--enhance", action="store_true", default=False, help="Enhance the transcription")
+    parser.add_argument("-d", "--detect", action="store_true", default=False, help="Detect logical fallacies, bias, irony, faults in the transcription")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Increase output verbosity")
     parser.add_argument("-t", "--token", type=str, help="API token for the Gemini API")
-    parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds")
-    parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds")
+    parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds for trasncription")
+    parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds for trasncription")
     parser.add_argument("-is", "--ignore_ssl", action="store_true", default=True, help="Ignore SSL certificate errors (nocheckcertificate)")
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
