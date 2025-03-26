@@ -2,14 +2,17 @@
 
 ## Overview
 
-`ytdebunk` is a command-line tool that can be installed via `pip`. This repository contains the source code and a demonstration of its features.
+`ytdebunk` is a command-line tool that can be installed via `pip`. It takes a youtube video link as an argument and does a lots of works for you automatically.
+This repository contains the source code and a demonstration of its features.
 
 ### Current Features:
 - Download audio from YouTube videos.
 - Transcribe the audio content.
 - Optionally enhance the transcription using the **Gemini API**.
 - Optionally detect logical faults in the transcription using the **Gemini API**.
-- A Streamlit-based demo application.
+- Store the audio, transcription and logical errors in local folder
+
+There is also a Streamlit-based demo application.
 
 ### Upcoming Features:
 - Classifying assertive claims within the transcription.
