@@ -17,7 +17,7 @@ setup(
     entry_points={"console_scripts": ["ytdebunk=ytdebunk.ytdebunk:main"]},
     author="Md. Sazzad Hissain Khan",
     author_email='hissain.khan@gmail.com',
-    description="A CLI tool to download audio from a YouTube video, transcribe it, and refine and find logical errors in the transcription using AI.",
+    description="A CLI tool to automatically download audio .mp3 from a YouTube video link, transcribe it, refine and find logical errors in the transcription using AI.",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/hissain/youtuber-debunked',
