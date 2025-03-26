@@ -42,6 +42,7 @@ def main():
         logger.info(f"[ytdebunk] Ignore SSL: {args.ignore_ssl}")
         logger.info(f"[ytdebunk] Verbose: {args.verbose}")
         # logger.info(f"[ytdebunk] API Token: {args.token}")
+        
 
     if args.token:
         logger.info(f"[ytdebunk] Using API token from argument instead of environment.")
@@ -54,7 +55,7 @@ def main():
             return None, None
 
 
-    if args.enhance or args.detect:
+    if args.enhance == True or args.detect == True:
         token = args.token or os.getenv("GEMINI_API_KEY")
         if not token:
             logger.error("[ytdebunk] Enhancement/Detection is enabled but no Gemini API token provided or found in env.")
@@ -90,7 +91,7 @@ def main():
             if args.verbose:
                 logger.info(f"[ytdebunk] Transcription saved at {settings.TRANSCRIPTION_FILE}")
 
-    if args.enhance:
+    if args.enhance == True:
         transcription = enhance_transcription(transcription, 
                                               token, 
                                               verbose=args.verbose, 
@@ -102,20 +103,23 @@ def main():
             if args.verbose:
                 logger.info(f"[ytdebunk] Refined transcription saved at {settings.REFINED_TRANSCRIPTION_FILE}")
 
-    logical_faults = detect_logical_faults(transcription, verbose=args.verbose, language=ln, logger=logger)
-    
-    with open(settings.LOGICAL_FAULTS_FILE, "w", encoding="utf-8") as f:
-        f.write(logical_faults)
-        if args.verbose:
-            logger.info(f"[ytdebunk] Logical faults saved at {settings.LOGICAL_FAULTS_FILE}")
+    if args.detect == True:
+        logical_faults = detect_logical_faults(transcription, verbose=args.verbose, language=ln, logger=logger)
+        
+        with open(settings.LOGICAL_FAULTS_FILE, "w", encoding="utf-8") as f:
+            f.write(logical_faults)
+            if args.verbose:
+                logger.info(f"[ytdebunk] Logical faults saved at {settings.LOGICAL_FAULTS_FILE}")
     
     if args.verbose:
         logger.info(f"*"*80)
         logger.info(f"[ytdebunk] TRANSCRIPTION:\n{transcription}")
-        logger.info(f"-"*80)
-        logger.info(f"[ytdebunk] REFINED TRANSCRIPTION:\n{transcription}")
-        logger.info(f"-"*80)
-        logger.info(f"[ytdebunk] LOGICAL FAULTS:\n{logical_faults}")
+        if args.enhance:
+            logger.info(f"-"*80)
+            logger.info(f"[ytdebunk] REFINED TRANSCRIPTION:\n{transcription}")
+        if args.detect:
+            logger.info(f"-"*80)
+            logger.info(f"[ytdebunk] LOGICAL FAULTS:\n{logical_faults}")
         logger.info(f"*"*80)
 
     return transcription, logical_faults
