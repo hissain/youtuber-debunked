@@ -1,5 +1,5 @@
 import google.generativeai as genai
-import os
+import os, sys, logging
 import ytdebunk.settings as settings
 from dotenv import load_dotenv
 load_dotenv()
@@ -22,12 +22,19 @@ def chunk_text(text, max_chars=3000):
 
     return chunks
 
-
-
 def detect_logical_faults(transcription, 
                           key=os.getenv("GENAI_API_KEY"), 
                           verbose=False, 
-                          language=settings.LANUAGE_DEFAULT):
+                          language=settings.LANUAGE_DEFAULT,
+                          logger=None):
+    
+    if logger is None:
+        logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
 
     fault_detection_prompt = f"""
 You are a {settings.TRANSCRIPTION_MODEL_NAMES[language]} language expert and a philosopher specializing in detecting logical flows, fallacies, bias, and irony in a {settings.TRANSCRIPTION_MODEL_NAMES[language]} speaker's content. 
@@ -47,16 +54,16 @@ Here is the speaker's text:
     chunks = chunk_text(transcription)
     refined_chunks = []
 
-    print(f"[ytdebunk-analyzer] Analyzing {len(chunks)} chunks of text...")
+    logger.info(f"[ytdebunk-analyzer] Analyzing {len(chunks)} chunks of text...")
     for idx, chunk in enumerate(chunks):
         if verbose:
-            print(f"[ytdebunk-analyzer] Analyzing chunk {idx + 1} of {len(chunks)}")
+            logger.info(f"[ytdebunk-analyzer] Analyzing chunk {idx + 1} of {len(chunks)}")
         prompt = fault_detection_prompt + chunk
         try:
             response = model.generate_content(prompt)
             refined_chunks.append(response.text.strip())
         except Exception as e:
-            print(f"[ytdebunk-analyzer] Error while processing chunk {idx + 1}: {e}")
+            logger.info(f"[ytdebunk-analyzer] Error while processing chunk {idx + 1}: {e}")
             refined_chunks.append(f"[ytdebunk-analyzer] Error processing chunk {idx + 1}")
 
     return " ".join(refined_chunks)

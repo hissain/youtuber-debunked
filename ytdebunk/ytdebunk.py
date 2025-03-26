@@ -1,5 +1,7 @@
 import argparse
 import os
+import sys
+import logging
 import ytdebunk.settings as settings
 from dotenv import load_dotenv
 from ytdebunk.downloader import download_audio
@@ -23,11 +25,17 @@ def main():
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
     args = parser.parse_args()
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    logger.addHandler(console_handler)
 
     if args.enhance:
         token = args.token or os.getenv("GEMINI_API_TOKEN") or os.getenv("GEMINI_API_KEY")
         if not token:
-            print("[ytdebunk] Error: Enhancement is enabled but no Gemini API token provided or found in env.")
+            logger.error("[ytdebunk] Enhancement is enabled but no Gemini API token provided or found in env.")
             return
 
     st = args.start_time
@@ -35,50 +43,57 @@ def main():
     ln = args.language
 
     if ln is not None and ln not in ["bn", "en"]:
-        print("[ytdebunk] Error: Invalid language. Valid: [bn, en]")
+        logger.error("[ytdebunk] Invalid language. Valid: [bn, en]")
         return
     
     if st is not None and et is not None and st >= et:
-        print("[ytdebunk] Error: Start time must be less than end time.")
+        logger.error("[ytdebunk] Start time must be less than end time.")
         return
     
     download_audio(args.yt_video_url, 
                    start_time=st, 
                    end_time=et, 
                    verbose=args.verbose, 
-                   ignore_ssl_cert=args.ignore_ssl)
+                   ignore_ssl_cert=args.ignore_ssl,
+                   logger=logger)
 
     transcription = transcribe_audio(verbose=args.verbose, 
                                      start_time=st, 
                                      end_time=et,
-                                     language = ln)
+                                     language = ln,
+                                     logger=logger)
     
     with open(settings.TRANSCRIPTION_FILE, "w", encoding="utf-8") as f:
             f.write(transcription)
             if args.verbose:
-                print(f"[ytdebunk] Transcription saved at {settings.TRANSCRIPTION_FILE}")
+                logger.info(f"[ytdebunk] Transcription saved at {settings.TRANSCRIPTION_FILE}")
 
     if args.enhance:
-        transcription = enhance_transcription(transcription, token, verbose=args.verbose, language=ln)
+        transcription = enhance_transcription(transcription, 
+                                              token, 
+                                              verbose=args.verbose, 
+                                              language=ln,
+                                              logger=logger)
+        
         with open(settings.REFINED_TRANSCRIPTION_FILE, "w", encoding="utf-8") as f:
             f.write(transcription)
             if args.verbose:
-                print(f"[ytdebunk] Refined transcription saved at {settings.REFINED_TRANSCRIPTION_FILE}")
+                logger.info(f"[ytdebunk] Refined transcription saved at {settings.REFINED_TRANSCRIPTION_FILE}")
 
-    logical_faults = detect_logical_faults(transcription, verbose=args.verbose, language=ln)
+    logical_faults = detect_logical_faults(transcription, verbose=args.verbose, language=ln, logger=logger)
     
     with open(settings.LOGICAL_FAULTS_FILE, "w", encoding="utf-8") as f:
         f.write(logical_faults)
         if args.verbose:
-            print(f"[ytdebunk] Logical faults saved at {settings.LOGICAL_FAULTS_FILE}")
+            logger.info(f"[ytdebunk] Logical faults saved at {settings.LOGICAL_FAULTS_FILE}")
     
     if args.verbose:
-        print(f"*"*80)
-        print(f"[ytdebunk] TRANSCRIPTION:\n{transcription}")
-        print(f"-"*80)
-        print(f"[ytdebunk] REFINED TRANSCRIPTION:\n{transcription}")
-        print(f"-"*80)
-        print(f"[ytdebunk] LOGICAL FAULTS:\n{logical_faults}")
-        print(f"*"*80)
+        logger.info(f"*"*80)
+        logger.info(f"[ytdebunk] TRANSCRIPTION:\n{transcription}")
+        logger.info(f"-"*80)
+        logger.info(f"[ytdebunk] REFINED TRANSCRIPTION:\n{transcription}")
+        logger.info(f"-"*80)
+        logger.info(f"[ytdebunk] LOGICAL FAULTS:\n{logical_faults}")
+        logger.info(f"*"*80)
 
     return transcription, logical_faults

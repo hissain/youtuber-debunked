@@ -6,6 +6,8 @@ import bisect
 import ytdebunk.settings as settings
 from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
 import warnings
+import sys, logging
+
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
 chunk_duration = 14
@@ -13,7 +15,6 @@ sampling_rate_target = 16000
 silence_window = 0.5
 
 def load_model(model_path, device):
-    print("[ytdebunk-transcriber] Loading Whisper model components...")
     feature_extractor = WhisperFeatureExtractor.from_pretrained(model_path)
     tokenizer = WhisperTokenizer.from_pretrained(model_path)
     processor = WhisperProcessor.from_pretrained(model_path)
@@ -92,10 +93,20 @@ def transcribe_audio(
         start_time=None, 
         end_time=None,
         verbose=False,
-        language=settings.LANUAGE_DEFAULT):
+        language=settings.LANUAGE_DEFAULT,
+        logger=None):
     
+    if logger is None:
+        logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
+
     model_path = settings.TRANSCRIPTION_MODELS[language]
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logger.info("[ytdebunk-transcriber] Loading Whisper model components...")
     feature_extractor, tokenizer, processor, model = load_model(model_path, device)
     
     # Load and process audio
@@ -114,11 +125,11 @@ def transcribe_audio(
     split_points = generate_split_points(silent_intervals, total_duration)
     
     transcriptions = []
-    print(f"[ytdebunk-transcriber] Transcribing {len(split_points)-1} chunks...")
+    logger.info(f"[ytdebunk-transcriber] Transcribing {len(split_points)-1} chunks...")
     
     for i in range(len(split_points) - 1):
         if verbose:
-            print(f"[ytdebunk-transcriber] Processing chunk {i+1}/{len(split_points)-1} ({split_points[i]:.1f}s - {split_points[i+1]:.1f}s)")
+            logger.info(f"[ytdebunk-transcriber] Processing chunk {i+1}/{len(split_points)-1} ({split_points[i]:.1f}s - {split_points[i+1]:.1f}s)")
         
         start = int(split_points[i] * sampling_rate_target)
         end = int(split_points[i+1] * sampling_rate_target)
@@ -142,6 +153,6 @@ def transcribe_audio(
     full_transcription = " ".join(transcriptions)
     
     if verbose:
-        print("[ytdebunk-transcriber] Transcription complete!")
+        logger.info("[ytdebunk-transcriber] Transcription complete!")
     
     return full_transcription

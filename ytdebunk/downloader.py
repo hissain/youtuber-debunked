@@ -1,11 +1,20 @@
-import os
+import os, sys
 import yt_dlp
 import ytdebunk.settings as settings
-# import settings as settings
+import logging
 
-def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=False):
+def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=False, logger=None):
+    
+    if logger is None:
+        logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
+
     if verbose:
-        print(f"[ytdebunk-download] Downloading audio from {video_url}...")
+        logger.info(f"[ytdebunk-download] Downloading audio from {video_url}...")
 
     os.makedirs(settings.OUTPUT_DIRECTORY, exist_ok=True)
 
@@ -37,7 +46,7 @@ def download_audio(video_url, start_time=None, end_time=None, verbose=False, ign
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([video_url])
         if verbose:
-            print(f"[ytdebunk-download] Audio download complete! Saved at {settings.AUDIO_FILE}")
+            logger.info(f"[ytdebunk-download] Audio download complete! Saved at {settings.AUDIO_FILE}")
 
 if __name__ == "__main__":
     download_audio("https://www.youtube.com/shorts/l8UDM4bOhpU", verbose=True)

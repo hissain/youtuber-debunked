@@ -1,6 +1,6 @@
 import google.generativeai as genai
 import ytdebunk.settings as settings
-import os
+import os, sys, logging
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,7 +25,16 @@ def chunk_text(text, max_chars=3000):
 def enhance_transcription(transcription, 
                           key=os.getenv("GENAI_API_KEY"), 
                           verbose=False, 
-                          language=settings.LANUAGE_DEFAULT):
+                          language=settings.LANUAGE_DEFAULT,
+                          logger=None):
+    
+    if logger is None:
+        logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
 
     enchacement_prompt = f"""
 You are a {settings.TRANSCRIPTION_MODEL_NAMES[language]} language expert. You have been asked to improve the following {settings.TRANSCRIPTION_MODEL_NAMES[language]} transcription by correcting errors and enhancing readability.
@@ -45,10 +54,10 @@ Here is the transcription:
     chunks = chunk_text(transcription)
     refined_chunks = []
 
-    print(f"[ytdebunk-refiner] Refining {len(chunks)} chunks of text...")
+    logger.info(f"[ytdebunk-refiner] Refining {len(chunks)} chunks of text...")
     for chunk in chunks:
         if verbose:
-            print("[ytdebunk-refiner] Refining chunk no. ", chunks.index(chunk) + 1)
+            logger.info(f"[ytdebunk-refiner] Refining chunk no. {chunks.index(chunk) + 1}" )
         prompt = enchacement_prompt + chunk
         response = model.generate_content(prompt)
         refined_chunks.append(response.text.strip())
