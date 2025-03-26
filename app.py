@@ -2,6 +2,10 @@ import streamlit as st
 from ytdebunk.ytdebunk import main as ytdebunk_main
 import sys
 import logging
+import ssl
+import pytube
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class StreamlitLogger(logging.StreamHandler):
     def __init__(self, placeholder):
@@ -14,6 +18,13 @@ class StreamlitLogger(logging.StreamHandler):
         self.log_messages.append(log_entry)
         log_text = "\n".join(self.log_messages)
         self.placeholder.markdown(f"#### Logs\n\n```text\n{log_text}\n```")
+
+def get_video_preview(video_url):
+    try:
+        yt = pytube.YouTube(video_url)
+        return yt.thumbnail_url
+    except Exception as e:
+        return None
 
 def run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose, token, log_placeholder):
 
@@ -76,6 +87,12 @@ def main():
     log_placeholder = st.empty()
 
     if st.button("Transcribe and Debunk This Video"):
+        if video_url:
+            video_preview = get_video_preview(video_url)
+            if video_preview:
+                st.image(video_preview, caption="Video Preview", use_column_width=True)
+            st.video(video_url)
+
         with st.spinner('Processing...'):
             transcription, fallacies = run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose, token, log_placeholder)
             
