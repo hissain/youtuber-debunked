@@ -3,7 +3,7 @@ import yt_dlp
 import ytdebunk.settings as settings
 # import settings as settings
 
-def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=True):
+def download_audio(video_url, start_time=None, end_time=None, verbose=False, ignore_ssl_cert=False):
     if verbose:
         print(f"[ytdebunk-download] Downloading audio from {video_url}...")
 

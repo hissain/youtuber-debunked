@@ -19,7 +19,7 @@ def main():
     parser.add_argument("-t", "--token", type=str, help="API token for the Gemini API")
     parser.add_argument("-st", "--start_time", type=float, default=None, help="Start time of the audio clip in seconds for trasncription")
     parser.add_argument("-et", "--end_time", type=float, default=None, help="End time of the audio clip in seconds for trasncription")
-    parser.add_argument("-is", "--ignore_ssl", action="store_true", default=True, help="Ignore SSL certificate errors (nocheckcertificate)")
+    parser.add_argument("-is", "--ignore_ssl", action="store_true", default=False, help="Ignore SSL certificate errors (nocheckcertificate)")
     # parser.add_argument("-debug", "--debug", action="store_true", help="Used for debugging purpose")
     
     args = parser.parse_args()
@@ -42,7 +42,11 @@ def main():
         print("[ytdebunk] Error: Start time must be less than end time.")
         return
     
-    download_audio(args.yt_video_url, start_time=st, end_time=et, verbose=args.verbose)
+    download_audio(args.yt_video_url, 
+                   start_time=st, 
+                   end_time=et, 
+                   verbose=args.verbose, 
+                   ignore_ssl_cert=args.ignore_ssl)
 
     transcription = transcribe_audio(verbose=args.verbose, 
                                      start_time=st, 
