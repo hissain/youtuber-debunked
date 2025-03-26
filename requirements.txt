@@ -133,5 +133,5 @@ urllib3==2.3.0
 userpath==1.9.2
 wcwidth==0.2.13
 yt-dlp==2025.3.21
--e git+ssh://git@github.com/hissain/youtuber-debunked.git@bd3b361815ae7bef673e50b5bd47ab8f88246adf#egg=ytdebunk
 zipp==3.21.0
+ytdebunker==1.1.3
