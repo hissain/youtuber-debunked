@@ -61,6 +61,8 @@ def run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose
 
     if result is None:
         return None, None
+    elif result[1] is None:
+        return result[0], None
     return result
 
 def main():
@@ -104,9 +106,7 @@ def main():
 
             if detect:
                 if fallacies:
-                    st.text_area("Apparent Logical Faults in the Transcription:", fallacies, height=300)
-                else:
-                    st.error("Failed to generate logical faults. Please check the logs for more details.")    
+                    st.text_area("Apparent Logical Faults in the Transcription:", fallacies, height=300)  
 
 if __name__ == "__main__":
     main()

@@ -103,6 +103,8 @@ def main():
             if args.verbose:
                 logger.info(f"[ytdebunk] Refined transcription saved at {settings.REFINED_TRANSCRIPTION_FILE}")
 
+    logical_faults = None
+    
     if args.detect == True:
         logical_faults = detect_logical_faults(transcription, verbose=args.verbose, language=ln, logger=logger)
         
