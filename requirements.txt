@@ -80,7 +80,8 @@ protobuf==5.29.4
 psutil==7.0.0
 ptyprocess==0.7.0
 pure_eval==0.2.3
-pyarrow==18.0.0.dev206
+# pyarrow==18.0.0.dev206
+https://pypi.fury.io/arrow-nightlies/-/ver_25cAT9/pyarrow-18.0.0.dev206.tar.gz#md5=ed5ee54db491a05f7502302581c34ec9
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
@@ -134,4 +135,4 @@ userpath==1.9.2
 wcwidth==0.2.13
 yt-dlp==2025.3.21
 zipp==3.21.0
-ytdebunker==1.1.3
+ytdebunk==1.1.3
