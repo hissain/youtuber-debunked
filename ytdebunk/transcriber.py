@@ -7,6 +7,8 @@ import ytdebunk.settings as settings
 from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
 import warnings
 import sys, logging
+import os
+os.environ["CURL_CA_BUNDLE"] = "/etc/ssl/certs/ca-certificates.crt"
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
