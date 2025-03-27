@@ -51,6 +51,8 @@ def run_ytdebunk(video_url, st_time, et_time, language, enhance, detect, verbose
     else:
         args.extend(['--language', 'en'])
 
+    args.extend(['--ignore_ssl'])
+    
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     streamlit_handler = StreamlitLogger(log_placeholder)
