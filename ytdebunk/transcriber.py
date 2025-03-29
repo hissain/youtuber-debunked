@@ -8,7 +8,9 @@ from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtra
 import warnings
 import sys, logging
 import os
-os.environ["CURL_CA_BUNDLE"] = "/etc/ssl/certs/ca-certificates.crt"
+import ssl
+import certifi
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
