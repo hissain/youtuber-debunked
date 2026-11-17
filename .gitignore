@@ -171,3 +171,65 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# ==============================================================================
+# Security & Privacy Protection (Critical)
+# ==============================================================================
+
+# Secrets, Environment & API Keys
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.crt
+*.token
+*.secret
+credentials*.json
+service_account*.json
+client_secret*.json
+secrets.json
+token.pickle
+*.pfx
+*.p12
+
+# Application Output, User Downloads & Generated Media (Privacy Protection)
+output/
+!output/.gitkeep
+audio_segments/
+video_clips/
+graphics/
+
+# Raw media audio/video formats
+*.mp3
+*.mp4
+*.m4a
+*.wav
+*.ogg
+*.flac
+*.aac
+*.opus
+*.mkv
+*.webm
+*.avi
+*.mov
+
+# Subtitle and caption files
+*.vtt
+*.srt
+*.ass
+*.sbv
+
+# Operating System & IDE Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo

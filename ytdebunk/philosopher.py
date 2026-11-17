@@ -1,29 +1,13 @@
 import google.generativeai as genai
 import os, sys, logging
 import ytdebunk.settings as settings
+from ytdebunk.chunker import chunk_text
 from dotenv import load_dotenv
 load_dotenv()
 
-def chunk_text(text, max_chars=3000):
-    sentences = text.split("।")
-    chunks, current_chunk = [], ""
-
-    for sentence in sentences:
-        # Prevent chunks from exceeding max_chars, even if they don't end with "।"
-        if len(current_chunk) + len(sentence) + 1 <= max_chars:
-            current_chunk += sentence + "।"
-        else:
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-            current_chunk = sentence + "।"
-
-    if current_chunk:
-        chunks.append(current_chunk.strip())
-
-    return chunks
 
 def detect_logical_faults(transcription, 
-                          key=os.getenv("GENAI_API_KEY"), 
+                          key=None, 
                           verbose=False, 
                           language=settings.LANUAGE_DEFAULT,
                           logger=None):
@@ -35,6 +19,11 @@ def detect_logical_faults(transcription,
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.INFO)
         logger.addHandler(console_handler)
+
+    resolved_key = key or os.getenv("GEMINI_API_KEY") or os.getenv("GENAI_API_KEY")
+    if not resolved_key:
+        logger.error("[ytdebunk-analyzer] No Gemini API key provided or found in GEMINI_API_KEY / GENAI_API_KEY.")
+        raise ValueError("Gemini API key is required for logical fault detection.")
 
     fault_detection_prompt = f"""
 You are a {settings.TRANSCRIPTION_MODEL_NAMES[language]} language expert and a philosopher specializing in detecting logical flows, fallacies, bias, and irony in a {settings.TRANSCRIPTION_MODEL_NAMES[language]} speaker's content. 
@@ -48,7 +37,7 @@ IMPORTANT:
 Here is the speaker's text:
 """
 
-    genai.configure(api_key=key)
+    genai.configure(api_key=resolved_key)
     model = genai.GenerativeModel('gemini-1.5-flash')
 
     chunks = chunk_text(transcription)
@@ -63,7 +52,7 @@ Here is the speaker's text:
             response = model.generate_content(prompt)
             refined_chunks.append(response.text.strip())
         except Exception as e:
-            logger.info(f"[ytdebunk-analyzer] Error while processing chunk {idx + 1}: {e}")
+            logger.error(f"[ytdebunk-analyzer] Error while processing chunk {idx + 1}: {e}")
             refined_chunks.append(f"[ytdebunk-analyzer] Error processing chunk {idx + 1}")
 
     return " ".join(refined_chunks)

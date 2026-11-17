@@ -1,17 +1,12 @@
-import librosa
-import torch
-import torchaudio
-import numpy as np
 import bisect
 import ytdebunk.settings as settings
-from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
 import warnings
 import sys, logging
 import os
 import ssl
 import certifi
-ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
 
 chunk_duration = 14
@@ -19,6 +14,7 @@ sampling_rate_target = 16000
 silence_window = 0.5
 
 def load_model(model_path, device):
+    from transformers import WhisperTokenizer, WhisperProcessor, WhisperFeatureExtractor, WhisperForConditionalGeneration
     feature_extractor = WhisperFeatureExtractor.from_pretrained(model_path)
     tokenizer = WhisperTokenizer.from_pretrained(model_path)
     processor = WhisperProcessor.from_pretrained(model_path)
@@ -26,6 +22,9 @@ def load_model(model_path, device):
     return feature_extractor, tokenizer, processor, model
 
 def detect_silent_intervals(speech_array, sr):
+    import librosa
+    import numpy as np
+
     frame_length = 2048
     hop_length = 512
     rms = librosa.feature.rms(y=speech_array, frame_length=frame_length, hop_length=hop_length)
@@ -100,6 +99,10 @@ def transcribe_audio(
         language=settings.LANUAGE_DEFAULT,
         logger=None):
     
+    import torch
+    import torchaudio
+    import librosa
+
     if logger is None:
         logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
         logger = logging.getLogger(__name__)
