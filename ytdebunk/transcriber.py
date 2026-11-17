@@ -125,10 +125,18 @@ def transcribe_audio_gemini(
     if logger:
         logger.info(f"[ytdebunk-transcriber] Transcribing speech in {lang_name} via Gemini...")
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[audio_file, prompt]
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[audio_file, prompt]
+        )
+    except Exception as e_25:
+        if logger:
+            logger.info(f"[ytdebunk-transcriber] gemini-2.5-flash unavailable ({e_25}), falling back to gemini-1.5-flash...")
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[audio_file, prompt]
+        )
     
     transcription = (response.text or "").strip()
     if logger:

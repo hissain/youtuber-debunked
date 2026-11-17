@@ -230,12 +230,31 @@ def main():
     if args.make_video and report and script and timeline:
         src_video = getattr(settings, 'VIDEO_FILE', None)
         valid_src = src_video if (src_video and os.path.exists(src_video)) else None
+
+        # Ensure source audio exists for claim excerpts if subtitles were used
+        if not os.path.exists(settings.AUDIO_FILE):
+            if args.verbose:
+                logger.info("[ytdebunk] Source audio not found locally; downloading for video statement excerpts...")
+            try:
+                download_audio(
+                    args.yt_video_url,
+                    start_time=st,
+                    end_time=et,
+                    verbose=args.verbose,
+                    ignore_ssl_cert=args.ignore_ssl,
+                    logger=logger
+                )
+            except Exception as e_dl:
+                if args.verbose:
+                    logger.warning(f"[ytdebunk] Could not download audio for statement excerpts: {e_dl}")
+
         video_path = compose_debunk_video(
             report=report,
             script=script,
             timeline=timeline,
             aspect_ratio=args.aspect_ratio,
             source_video_path=valid_src,
+            source_audio_path=settings.AUDIO_FILE if os.path.exists(settings.AUDIO_FILE) else None,
             verbose=args.verbose,
             logger=logger
         )

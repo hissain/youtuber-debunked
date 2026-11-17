@@ -185,6 +185,24 @@ Analyze the transcript thoroughly. Extract between 2 and 6 key claims made by th
     # Step 4: Parse into typed DebunkReport
     report = DebunkReport.from_json_string(response_text)
 
+    # Backfill missing claim timestamps from subtitles if available
+    subtitles_file = getattr(settings, 'SUBTITLES_JSON_FILE', os.path.join(settings.OUTPUT_DIRECTORY, 'subtitles.json'))
+    if os.path.exists(subtitles_file) and report.claims:
+        try:
+            with open(subtitles_file, "r", encoding="utf-8") as sf:
+                sub_data = json.load(sf)
+            from ytdebunk.videomaker import match_quote_to_subtitles
+            from ytdebunk.timeline import format_seconds_to_timestamp
+            for claim in report.claims:
+                if not claim.timestamp_start or not claim.timestamp_end:
+                    s_sec, e_sec = match_quote_to_subtitles(claim.original_quote or claim.claim_text, sub_data)
+                    if e_sec > s_sec:
+                        claim.timestamp_start = format_seconds_to_timestamp(s_sec)
+                        claim.timestamp_end = format_seconds_to_timestamp(e_sec)
+        except Exception as e_subs:
+            if verbose:
+                log.debug(f"[ytdebunk-verifier] Could not backfill timestamps from subtitles: {e_subs}")
+
     # Attach sources from web grounding if claims lack sources
     if web_evidence and report.claims:
         evidence_urls = [e['href'] for e in web_evidence if e.get('href')]

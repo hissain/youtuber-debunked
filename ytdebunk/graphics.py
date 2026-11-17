@@ -33,15 +33,53 @@ def get_dimensions(aspect_ratio: str = "landscape") -> Tuple[int, int]:
         return (720, 1280)
     return (1280, 720)
 
-def _get_font(size: int):
+def is_bengali_text(text: Optional[str]) -> bool:
+    """
+    Checks if a string contains any Bengali Unicode characters (U+0980 - U+09FF).
+    """
+    if not text:
+        return False
+    return any('\u0980' <= ch <= '\u09ff' for ch in str(text))
+
+BENGALI_FONT_CANDIDATES = [
+    # Windows Bengali Fonts
+    "C:/Windows/Fonts/kalpurush.ttf",
+    "kalpurush.ttf",
+    "C:/Windows/Fonts/Siyamrupali.ttf",
+    "Siyamrupali.ttf",
+    "C:/Windows/Fonts/Nirmala.ttc",
+    "Nirmala.ttc",
+    "C:/Windows/Fonts/vrinda.ttf",
+    "C:/Windows/Fonts/vrindab.ttf",
+    "C:/Windows/Fonts/shonar.ttf",
+    # Linux Bengali Fonts
+    "/usr/share/fonts/truetype/noto/NotoSansBengali-Regular.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansBengali-Regular.otf",
+    "/usr/share/fonts/truetype/lohit-bengali/Lohit-Bengali.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSerif.ttf",
+    # macOS Bengali Fonts
+    "/System/Library/Fonts/KohinoorBangla.ttc",
+    "/Library/Fonts/Bangla MN.ttc",
+    "/Library/Fonts/Bangla Sangam MN.ttc"
+]
+
+STANDARD_FONT_CANDIDATES = [
+    "arial.ttf", "segoeui.ttf", "calibri.ttf", "tahoma.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/System/Library/Fonts/Helvetica.ttc"
+]
+
+def _get_font(size: int, language: str = "en", text: Optional[str] = None):
     """
     Attempts to load a standard scalable TTF font or falls back to PIL default font.
+    If Bengali text or language is detected, prioritizes Unicode Bengali fonts.
     """
-    font_candidates = [
-        "arial.ttf", "segoeui.ttf", "calibri.ttf", "tahoma.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc"
-    ]
+    is_bn = (language or "").lower() in ["bn", "bengali", "bangla"] or is_bengali_text(text)
+    if is_bn:
+        font_candidates = BENGALI_FONT_CANDIDATES + STANDARD_FONT_CANDIDATES
+    else:
+        font_candidates = STANDARD_FONT_CANDIDATES + BENGALI_FONT_CANDIDATES
+
     for font_name in font_candidates:
         try:
             return ImageFont.truetype(font_name, size)
@@ -82,9 +120,9 @@ def create_intro_card(
     card_box = [margin_x, margin_y, w - margin_x, h - margin_y]
     _draw_rounded_rectangle(draw, card_box, radius=20, fill=COLOR_CARD, outline=COLOR_BORDER, width=2)
 
-    font_badge = _get_font(int(min(w, h) * 0.035))
-    font_title = _get_font(int(min(w, h) * 0.055))
-    font_sub = _get_font(int(min(w, h) * 0.035))
+    font_badge = _get_font(int(min(w, h) * 0.035), language=language)
+    font_title = _get_font(int(min(w, h) * 0.055), language=language, text=video_title)
+    font_sub = _get_font(int(min(w, h) * 0.035), language=language)
 
     # Top Studio Badge
     badge_text = "AI DEBUNKER STUDIO"
@@ -116,7 +154,8 @@ def create_claim_card(
     veracity: str,
     fallacy: Optional[str] = None,
     aspect_ratio: str = "landscape",
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
+    language: str = "en"
 ) -> str:
     """
     Renders an original claim card with quotation and veracity badge.
@@ -132,10 +171,11 @@ def create_claim_card(
     card_box = [margin_x, margin_y, w - margin_x, h - margin_y]
     _draw_rounded_rectangle(draw, card_box, radius=18, fill=COLOR_CARD, outline=COLOR_BORDER, width=2)
 
-    font_header = _get_font(int(min(w, h) * 0.038))
-    font_quote = _get_font(int(min(w, h) * 0.045))
-    font_badge = _get_font(int(min(w, h) * 0.04))
-    font_meta = _get_font(int(min(w, h) * 0.032))
+    sample_text = quote or claim_text or ""
+    font_header = _get_font(int(min(w, h) * 0.038), language=language)
+    font_quote = _get_font(int(min(w, h) * 0.045), language=language, text=sample_text)
+    font_badge = _get_font(int(min(w, h) * 0.04), language=language)
+    font_meta = _get_font(int(min(w, h) * 0.032), language=language, text=fallacy)
 
     # Header
     draw.text((margin_x + 30, margin_y + 35), f"ORIGINAL STATEMENT #{claim_id}", font=font_header, fill=COLOR_TEXT_GOLD, anchor="lm")
@@ -177,7 +217,8 @@ def create_rebuttal_card(
     source: Optional[str] = None,
     visual_cue: Optional[str] = None,
     aspect_ratio: str = "landscape",
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
+    language: str = "en"
 ) -> str:
     """
     Renders the debunker character's rebuttal card with veracity badge and source citation.
@@ -194,10 +235,10 @@ def create_rebuttal_card(
     card_box = [margin_x, margin_y, w - margin_x, h - margin_y]
     _draw_rounded_rectangle(draw, card_box, radius=18, fill=COLOR_CARD, outline=COLOR_BORDER, width=2)
 
-    font_header = _get_font(int(min(w, h) * 0.038))
-    font_text = _get_font(int(min(w, h) * 0.044))
-    font_badge = _get_font(int(min(w, h) * 0.04))
-    font_citation = _get_font(int(min(w, h) * 0.032))
+    font_header = _get_font(int(min(w, h) * 0.038), language=language)
+    font_text = _get_font(int(min(w, h) * 0.044), language=language, text=rebuttal_text)
+    font_badge = _get_font(int(min(w, h) * 0.04), language=language)
+    font_citation = _get_font(int(min(w, h) * 0.032), language=language, text=source)
 
     # Header
     draw.text((margin_x + 30, margin_y + 35), f"DEBUNKER REBUTTAL #{claim_id}", font=font_header, fill=COLOR_PRIMARY, anchor="lm")
@@ -234,7 +275,8 @@ def create_scorecard_card(
     summary: str,
     fallacies: List[str],
     aspect_ratio: str = "landscape",
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
+    language: str = "en"
 ) -> str:
     """
     Renders the final veracity scorecard and executive verdict.
@@ -251,10 +293,10 @@ def create_scorecard_card(
     card_box = [margin_x, margin_y, w - margin_x, h - margin_y]
     _draw_rounded_rectangle(draw, card_box, radius=20, fill=COLOR_CARD, outline=COLOR_BORDER, width=2)
 
-    font_header = _get_font(int(min(w, h) * 0.038))
-    font_score = _get_font(int(min(w, h) * 0.12))
-    font_verdict = _get_font(int(min(w, h) * 0.045))
-    font_summary = _get_font(int(min(w, h) * 0.035))
+    font_header = _get_font(int(min(w, h) * 0.038), language=language)
+    font_score = _get_font(int(min(w, h) * 0.12), language=language)
+    font_verdict = _get_font(int(min(w, h) * 0.045), language=language)
+    font_summary = _get_font(int(min(w, h) * 0.035), language=language, text=summary)
 
     # Top Header
     draw.text((w // 2, margin_y + 40), "FINAL FACT-CHECK VERDICT", font=font_header, fill=COLOR_PRIMARY, anchor="mm")
@@ -295,11 +337,13 @@ def generate_all_graphics(
     os.makedirs(out_dir, exist_ok=True)
     cards = {}
 
+    lang = getattr(script, 'language', None) or getattr(report, 'language', None) or "en"
+
     # 1. Intro Card
     cards["intro"] = create_intro_card(
         video_title=report.video_title or script.video_title or "Debunk Studio",
         persona=script.persona,
-        language=script.language,
+        language=lang,
         aspect_ratio=aspect_ratio,
         output_path=os.path.join(out_dir, "intro_card.png")
     )
@@ -320,7 +364,8 @@ def generate_all_graphics(
             veracity=claim.veracity,
             fallacy=claim.fallacy_type,
             aspect_ratio=aspect_ratio,
-            output_path=os.path.join(out_dir, f"claim_{claim.id}.png")
+            output_path=os.path.join(out_dir, f"claim_{claim.id}.png"),
+            language=lang
         )
 
         rebuttal_key = f"rebuttal_{claim.id}"
@@ -335,7 +380,8 @@ def generate_all_graphics(
             source=source_url,
             visual_cue=cue,
             aspect_ratio=aspect_ratio,
-            output_path=os.path.join(out_dir, f"rebuttal_{claim.id}.png")
+            output_path=os.path.join(out_dir, f"rebuttal_{claim.id}.png"),
+            language=lang
         )
 
     # 3. Final Scorecard Card
@@ -344,7 +390,8 @@ def generate_all_graphics(
         summary=report.summary,
         fallacies=report.fallacies_found,
         aspect_ratio=aspect_ratio,
-        output_path=os.path.join(out_dir, "scorecard.png")
+        output_path=os.path.join(out_dir, "scorecard.png"),
+        language=lang
     )
 
     return cards

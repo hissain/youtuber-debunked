@@ -1,8 +1,10 @@
 import os
 import sys
+import re
+import json
 import subprocess
 import logging
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 from ytdebunk.schema import DebunkReport, DebunkScript, TimelineSheet, TimelineEvent
 from ytdebunk.graphics import generate_all_graphics, get_dimensions
 import ytdebunk.settings as settings
@@ -66,6 +68,78 @@ def render_image_audio_clip(
         raise RuntimeError(f"FFmpeg error rendering clip: {err_msg}")
 
     return output_clip_path
+
+def extract_audio_slice(
+    source_audio_path: str,
+    start_sec: float,
+    end_sec: float,
+    output_audio_path: str
+) -> str:
+    """
+    Extracts an audio slice from start_sec to end_sec from source audio using FFmpeg.
+    """
+    dur = max(0.5, end_sec - start_sec)
+    os.makedirs(os.path.dirname(os.path.abspath(output_audio_path)), exist_ok=True)
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", f"{start_sec:.2f}",
+        "-t", f"{dur:.2f}",
+        "-i", source_audio_path,
+        "-c:a", "libmp3lame", "-b:a", "192k",
+        output_audio_path
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        err_msg = proc.stderr.decode("utf-8", errors="ignore")
+        raise RuntimeError(f"FFmpeg error extracting audio slice: {err_msg}")
+    return output_audio_path
+
+def match_quote_to_subtitles(quote: str, subtitles: List[Dict[str, Any]]) -> Tuple[float, float]:
+    """
+    Matches keywords from quote to subtitle items to infer start and end seconds.
+    Expands adjacent matches to capture multi-sentence statements.
+    Returns (start_sec, end_sec) or (0.0, 0.0) if no match.
+    """
+    if not quote or not subtitles:
+        return 0.0, 0.0
+
+    clean_quote = re.sub(r'[^\w\s]', ' ', quote.lower())
+    words = set([w for w in clean_quote.split() if len(w) > 2])
+    if not words:
+        return 0.0, 0.0
+
+    matching_indices = []
+    for idx, s in enumerate(subtitles):
+        txt = (s.get("text") or "").lower()
+        cnt = sum(1 for w in words if w in txt)
+        if cnt > 0:
+            matching_indices.append((idx, cnt))
+
+    if not matching_indices:
+        return 0.0, 0.0
+
+    matching_indices.sort(key=lambda x: x[1], reverse=True)
+    best_idx = matching_indices[0][0]
+
+    # Expand window around best index if adjacent lines also share words
+    start_idx = best_idx
+    end_idx = best_idx
+    for delta in [-3, -2, -1, 1, 2, 3]:
+        cand = best_idx + delta
+        if 0 <= cand < len(subtitles):
+            txt = (subtitles[cand].get("text") or "").lower()
+            if any(w in txt for w in words):
+                start_idx = min(start_idx, cand)
+                end_idx = max(end_idx, cand)
+
+    from ytdebunk.timeline import parse_timestamp_to_seconds
+    s_raw = subtitles[start_idx].get("start") or subtitles[start_idx].get("start_formatted")
+    e_raw = subtitles[end_idx].get("end") or subtitles[end_idx].get("end_formatted")
+    s_sec = parse_timestamp_to_seconds(s_raw)
+    e_sec = parse_timestamp_to_seconds(e_raw)
+    if e_sec <= s_sec:
+        e_sec = s_sec + 4.0
+    return s_sec, e_sec
 
 def render_video_slice(
     source_video_path: str,
@@ -158,6 +232,7 @@ def compose_debunk_video(
     output_path: Optional[str] = None,
     aspect_ratio: str = "landscape",
     source_video_path: Optional[str] = None,
+    source_audio_path: Optional[str] = None,
     keep_temp_clips: bool = False,
     verbose: bool = False,
     logger: Optional[logging.Logger] = None
@@ -186,6 +261,14 @@ def compose_debunk_video(
 
     temp_clip_dir = os.path.join(settings.OUTPUT_DIRECTORY, "video_clips")
     os.makedirs(temp_clip_dir, exist_ok=True)
+
+    source_audio = source_audio_path or getattr(settings, 'AUDIO_FILE', None)
+    if not (source_audio and os.path.exists(source_audio)):
+        default_audio = os.path.join(settings.OUTPUT_DIRECTORY, 'audio.mp3')
+        if os.path.exists(default_audio):
+            source_audio = default_audio
+        else:
+            source_audio = None
 
     if verbose:
         log.info(f"[ytdebunk-videomaker] Starting video composition for {len(timeline.events)} timeline events (Layout: {aspect_ratio}, Res: {resolution[0]}x{resolution[1]})...")
@@ -216,34 +299,74 @@ def compose_debunk_video(
             )
 
         elif ev.event_type == "original_claim":
-            # If source video is present and accessible, extract video slice
             slice_success = False
-            if source_video_path and os.path.exists(source_video_path):
-                from ytdebunk.timeline import parse_timestamp_to_seconds
-                claim_obj = next((c for c in report.claims if c.id == ev.claim_id), None)
-                if claim_obj and claim_obj.timestamp_start and claim_obj.timestamp_end:
-                    s_sec = parse_timestamp_to_seconds(claim_obj.timestamp_start)
-                    e_sec = parse_timestamp_to_seconds(claim_obj.timestamp_end)
-                    if e_sec > s_sec:
-                        try:
-                            render_video_slice(
-                                source_video_path=source_video_path,
-                                start_sec=s_sec,
-                                end_sec=e_sec,
-                                output_clip_path=clip_path,
-                                resolution=resolution
-                            )
-                            slice_success = True
-                        except Exception as e:
-                            log.warning(f"[ytdebunk-videomaker] Could not slice source video: {e}. Falling back to graphic card.")
+            from ytdebunk.timeline import parse_timestamp_to_seconds
 
+            claim_obj = next((c for c in report.claims if c.id == ev.claim_id), None)
+            s_sec = 0.0
+            e_sec = 0.0
+
+            if claim_obj and claim_obj.timestamp_start and claim_obj.timestamp_end:
+                s_sec = parse_timestamp_to_seconds(claim_obj.timestamp_start)
+                e_sec = parse_timestamp_to_seconds(claim_obj.timestamp_end)
+
+            # If claim object lacked timestamps, match quote from subtitles
+            if (e_sec <= s_sec) and claim_obj and claim_obj.original_quote:
+                subtitles_file = getattr(settings, 'SUBTITLES_JSON_FILE', os.path.join(settings.OUTPUT_DIRECTORY, 'subtitles.json'))
+                if os.path.exists(subtitles_file):
+                    try:
+                        with open(subtitles_file, "r", encoding="utf-8") as sf:
+                            sub_data = json.load(sf)
+                        m_start, m_end = match_quote_to_subtitles(claim_obj.original_quote, sub_data)
+                        if m_end > m_start:
+                            s_sec = m_start
+                            e_sec = m_end
+                    except Exception as e:
+                        log.debug(f"[ytdebunk-videomaker] Subtitle matching error: {e}")
+
+            clip_dur = ev.duration_seconds
+            if e_sec > s_sec:
+                clip_dur = max(1.5, e_sec - s_sec)
+
+            # Option 1: Slicing source video if provided and exists
+            if source_video_path and os.path.exists(source_video_path) and e_sec > s_sec:
+                try:
+                    render_video_slice(
+                        source_video_path=source_video_path,
+                        start_sec=s_sec,
+                        end_sec=e_sec,
+                        output_clip_path=clip_path,
+                        resolution=resolution
+                    )
+                    slice_success = True
+                except Exception as e:
+                    log.warning(f"[ytdebunk-videomaker] Could not slice source video: {e}. Falling back to graphic card + audio.")
+
+            # Option 2: Graphic card + YouTuber's extracted audio slice
             if not slice_success:
                 card = cards.get(f"claim_{ev.claim_id}") or cards.get("intro")
+                claim_audio_path = None
+
+                if source_audio and os.path.exists(source_audio):
+                    try:
+                        extracted_audio = os.path.join(temp_clip_dir, f"claim_audio_{ev.claim_id}.mp3")
+                        slice_end = e_sec if e_sec > s_sec else (s_sec + clip_dur)
+                        extract_audio_slice(
+                            source_audio_path=source_audio,
+                            start_sec=s_sec,
+                            end_sec=slice_end,
+                            output_audio_path=extracted_audio
+                        )
+                        if os.path.exists(extracted_audio):
+                            claim_audio_path = extracted_audio
+                    except Exception as e:
+                        log.warning(f"[ytdebunk-videomaker] Could not slice audio for claim #{ev.claim_id}: {e}")
+
                 render_image_audio_clip(
                     image_path=card,
-                    duration=ev.duration_seconds,
+                    duration=clip_dur,
                     output_clip_path=clip_path,
-                    audio_path=None,
+                    audio_path=claim_audio_path,
                     resolution=resolution
                 )
 

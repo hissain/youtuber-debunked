@@ -220,3 +220,164 @@ def test_download_video_mock(mock_ydl_cls, tmp_path):
     res = download_video("https://youtube.com/watch?v=123", output_path=target_file)
     assert res == target_file
     assert mock_ydl_cls.called
+
+def test_bengali_graphics_rendering(tmp_path):
+    out_dir = str(tmp_path / "bn_graphics")
+    os.makedirs(out_dir, exist_ok=True)
+
+    intro_p = create_intro_card(
+        video_title="বাংলাদেশ ২০২৪ আন্দোলন বিশ্লেষণ",
+        persona="skeptic",
+        language="bn",
+        aspect_ratio="landscape",
+        output_path=os.path.join(out_dir, "intro_card.png")
+    )
+    assert os.path.exists(intro_p)
+
+    claim_p = create_claim_card(
+        claim_id=1,
+        quote="১৯৭১ ছিল আমাদের ভুল ঠিকানা। ১৯৪৭ ও ছিল তাই।",
+        claim_text="১৯৭১ এবং ১৯৪৭ উভয়ই ঐতিহাসিক ভুল ছিল।",
+        veracity="False",
+        fallacy="ভুল সাদৃশ্য",
+        aspect_ratio="landscape",
+        output_path=os.path.join(out_dir, "claim_1.png"),
+        language="bn"
+    )
+    assert os.path.exists(claim_p)
+
+    rebuttal_p = create_rebuttal_card(
+        claim_id=1,
+        rebuttal_text="ঐতিহাসিক তথ্য ও দলিল অনুসারে ১৯৭১ সালের মুক্তিযুদ্ধ ছিল একটি বৈধ স্বাধিকার আন্দোলন।",
+        veracity="False",
+        source="https://bangladesh.gov.bd",
+        aspect_ratio="landscape",
+        output_path=os.path.join(out_dir, "rebuttal_1.png"),
+        language="bn"
+    )
+    assert os.path.exists(rebuttal_p)
+
+    scorecard_p = create_scorecard_card(
+        score=25.0,
+        summary="ঐতিহাসিক বয়ান বিকৃত এবং প্রমাণহীন দাবির আধিক্য রয়েছে।",
+        fallacies=["ভুল সাদৃশ্য"],
+        aspect_ratio="landscape",
+        output_path=os.path.join(out_dir, "scorecard.png"),
+        language="bn"
+    )
+    assert os.path.exists(scorecard_p)
+
+def test_match_quote_to_subtitles():
+    from ytdebunk.videomaker import match_quote_to_subtitles
+    sample_subs = [
+        {"start": 10.0, "end": 15.0, "start_formatted": "00:10", "end_formatted": "00:15", "text": "প্রথম বাক্য এখানে বলা হয়েছে"},
+        {"start": 15.0, "end": 22.0, "start_formatted": "00:15", "end_formatted": "00:22", "text": "১৯৭১ ছিল আমাদের ভুল ঠিকানা এবং ১৯৪৭ ছিল"},
+        {"start": 22.0, "end": 28.0, "start_formatted": "00:22", "end_formatted": "00:28", "text": "পরবর্তী আলোচনা শুরু হলো"}
+    ]
+    s, e = match_quote_to_subtitles("১৯৭১ ছিল আমাদের ভুল ঠিকানা", sample_subs)
+    assert s == 15.0
+    assert e >= 22.0
+
+def test_compose_debunk_video_with_original_claim_audio(tmp_path):
+    # Create a tiny dummy mp3 audio source using ffmpeg
+    src_audio = str(tmp_path / "dummy_audio.mp3")
+    cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=10", "-c:a", "libmp3lame", src_audio]
+    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+
+    report = DebunkReport(
+        video_url="https://youtube.com/watch?v=sample_bn",
+        video_title="পরীক্ষামূলক শিরোনাম",
+        language="bn",
+        summary="সারসংক্ষেপ",
+        overall_veracity_score=30.0,
+        claims=[
+            ClaimVerification(
+                id=1,
+                timestamp_start="00:01",
+                timestamp_end="00:03",
+                original_quote="বক্তব্যের মূল অংশ",
+                claim_text="দাবির সারমর্ম",
+                claim_type="Factual",
+                veracity="False",
+                confidence_score=0.9,
+                is_fallacious=False,
+                evidence_summary="প্রমাণ",
+                counter_argument="যুক্তি"
+            )
+        ]
+    )
+
+    script = DebunkScript(
+        video_url=report.video_url,
+        video_title=report.video_title,
+        language="bn",
+        persona="skeptic",
+        hook="ভূমিকা",
+        segments=[
+            ScriptSegment(
+                segment_id=1,
+                claim_id=1,
+                timestamp_start="00:01",
+                timestamp_end="00:03",
+                speaker_quote="বক্তব্যের মূল অংশ",
+                rebuttal_text="যুক্তি খণ্ডন",
+                duration_seconds=2.0
+            )
+        ],
+        outro="উপসংহার"
+    )
+
+    timeline = TimelineSheet(
+        video_url=report.video_url,
+        language="bn",
+        total_duration_seconds=7.0,
+        events=[
+            TimelineEvent(
+                event_id=1,
+                claim_id=None,
+                event_type="intro",
+                title="Intro",
+                start_seconds=0.0,
+                end_seconds=2.0,
+                timestamp_start="00:00",
+                timestamp_end="00:02",
+                duration_seconds=2.0,
+                text="ভূমিকা"
+            ),
+            TimelineEvent(
+                event_id=2,
+                claim_id=1,
+                event_type="original_claim",
+                title="Original Statement",
+                start_seconds=2.0,
+                end_seconds=4.0,
+                timestamp_start="00:01",
+                timestamp_end="00:03",
+                duration_seconds=2.0,
+                text="বক্তব্যের মূল অংশ"
+            ),
+            TimelineEvent(
+                event_id=3,
+                claim_id=1,
+                event_type="debunk_rebuttal",
+                title="Rebuttal",
+                start_seconds=4.0,
+                end_seconds=6.0,
+                timestamp_start="00:04",
+                timestamp_end="00:06",
+                duration_seconds=2.0,
+                text="যুক্তি খণ্ডন"
+            )
+        ]
+    )
+
+    out_video = str(tmp_path / "debunk_bn_rendered.mp4")
+    res = compose_debunk_video(
+        report=report,
+        script=script,
+        timeline=timeline,
+        output_path=out_video,
+        source_audio_path=src_audio
+    )
+    assert os.path.exists(res)
+    assert os.path.getsize(res) > 5000
