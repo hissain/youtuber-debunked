@@ -608,10 +608,12 @@
           <div class="form-group">
             <label>Neural Voice</label>
             <select id="voiceName">
-              <option value="en-US-GuyNeural">en-US-GuyNeural (Male)</option>
-              <option value="en-US-JennyNeural">en-US-JennyNeural (Female)</option>
-              <option value="bn-BD-PradeepNeural">bn-BD-PradeepNeural (Male)</option>
-              <option value="bn-BD-NabanitaNeural">bn-BD-NabanitaNeural (Female)</option>
+              <option value="en-US-GuyNeural">en-US-GuyNeural (Male - US)</option>
+              <option value="en-US-JennyNeural">en-US-JennyNeural (Female - US)</option>
+              <option value="bn-IN-BashkarNeural">bn-IN-BashkarNeural (Male - Bengali)</option>
+              <option value="bn-IN-TanishaaNeural">bn-IN-TanishaaNeural (Female - Bengali)</option>
+              <option value="bn-BD-PradeepNeural">bn-BD-PradeepNeural (Male - BD)</option>
+              <option value="bn-BD-NabanitaNeural">bn-BD-NabanitaNeural (Female - BD)</option>
             </select>
           </div>
           <div class="form-group">
@@ -889,10 +891,10 @@
       const vSelect = document.getElementById('voiceName');
       if (this.value === 'bn') {
         vSelect.innerHTML = `
-          <option value="bn-BD-PradeepNeural" selected>bn-BD-PradeepNeural (Male - BD)</option>
+          <option value="bn-IN-BashkarNeural" selected>bn-IN-BashkarNeural (Male - Recommended)</option>
+          <option value="bn-IN-TanishaaNeural">bn-IN-TanishaaNeural (Female - Recommended)</option>
+          <option value="bn-BD-PradeepNeural">bn-BD-PradeepNeural (Male - BD)</option>
           <option value="bn-BD-NabanitaNeural">bn-BD-NabanitaNeural (Female - BD)</option>
-          <option value="bn-IN-BashkarNeural">bn-IN-BashkarNeural (Male - IN)</option>
-          <option value="bn-IN-TanishaaNeural">bn-IN-TanishaaNeural (Female - IN)</option>
         `;
       } else {
         vSelect.innerHTML = `

@@ -16,8 +16,8 @@ VOICE_MAP = {
         "female": "en-US-JennyNeural"
     },
     "bn": {
-        "male": "bn-BD-PradeepNeural",
-        "female": "bn-BD-NabanitaNeural"
+        "male": "bn-IN-BashkarNeural",
+        "female": "bn-IN-TanishaaNeural"
     }
 }
 
@@ -26,10 +26,10 @@ ALL_PRESET_VOICES = [
     {"name": "en-US-JennyNeural", "language": "en", "gender": "female", "label": "English (US) - Jenny (Female)"},
     {"name": "en-US-ChristopherNeural", "language": "en", "gender": "male", "label": "English (US) - Christopher (Male)"},
     {"name": "en-US-AvaNeural", "language": "en", "gender": "female", "label": "English (US) - Ava (Female)"},
+    {"name": "bn-IN-BashkarNeural", "language": "bn", "gender": "male", "label": "Bengali (IN) - Bashkar (Male - Recommended)"},
+    {"name": "bn-IN-TanishaaNeural", "language": "bn", "gender": "female", "label": "Bengali (IN) - Tanishaa (Female - Recommended)"},
     {"name": "bn-BD-PradeepNeural", "language": "bn", "gender": "male", "label": "Bengali (BD) - Pradeep (Male)"},
     {"name": "bn-BD-NabanitaNeural", "language": "bn", "gender": "female", "label": "Bengali (BD) - Nabanita (Female)"},
-    {"name": "bn-IN-BashkarNeural", "language": "bn", "gender": "male", "label": "Bengali (IN) - Bashkar (Male)"},
-    {"name": "bn-IN-TanishaaNeural", "language": "bn", "gender": "female", "label": "Bengali (IN) - Tanishaa (Female)"},
 ]
 
 def get_default_voice(language: str = "en", gender: str = "male") -> str:
@@ -102,18 +102,42 @@ async def synthesize_speech_async(
 ) -> str:
     """
     Asynchronously synthesizes speech using edge-tts and writes to output_path.
+    Includes automatic fallback to alternative regional voices if a voice fails.
     """
     import edge_tts
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     voice_name = voice or get_default_voice("en", "male")
-    communicate = edge_tts.Communicate(
-        text=text,
-        voice=voice_name,
-        rate=rate,
-        pitch=pitch,
-        volume=volume
-    )
-    await communicate.save(output_path)
+
+    try:
+        communicate = edge_tts.Communicate(
+            text=text,
+            voice=voice_name,
+            rate=rate,
+            pitch=pitch,
+            volume=volume
+        )
+        await communicate.save(output_path)
+    except Exception as e:
+        # Automatic fallback for regional voice endpoints that return NoAudioReceived
+        fallback_voice = None
+        if voice_name.startswith("bn-"):
+            fallback_voice = "bn-IN-BashkarNeural" if ("pradeep" in voice_name.lower() or "male" in voice_name.lower()) else "bn-IN-TanishaaNeural"
+        elif voice_name.startswith("en-"):
+            fallback_voice = "en-US-GuyNeural"
+
+        if fallback_voice and fallback_voice != voice_name:
+            logger.warning(f"[ytdebunk-voice] Voice '{voice_name}' failed ({e}). Retrying with resilient fallback '{fallback_voice}'...")
+            communicate = edge_tts.Communicate(
+                text=text,
+                voice=fallback_voice,
+                rate=rate,
+                pitch=pitch,
+                volume=volume
+            )
+            await communicate.save(output_path)
+        else:
+            raise e
+
     return output_path
 
 def _run_in_new_loop(coro):

@@ -91,25 +91,91 @@ def generate_split_points(silent_intervals, total_duration):
     
     return split_points
 
+def transcribe_audio_gemini(
+        audio_path=settings.AUDIO_FILE,
+        start_time=None,
+        end_time=None,
+        language=settings.LANUAGE_DEFAULT,
+        key=None,
+        logger=None):
+    """
+    High-speed, zero-dependency cloud ASR fallback using Gemini multimodal audio capabilities.
+    Bypasses PyTorch / local GPU requirements entirely.
+    """
+    from google import genai
+    if logger:
+        logger.info("[ytdebunk-transcriber] Uploading audio clip to Gemini Cloud ASR...")
+    
+    client = genai.Client(api_key=key)
+    audio_file = client.files.upload(file=audio_path)
+    
+    lang_name = "Bengali (বাংলা)" if language == "bn" else "English"
+    time_instruction = ""
+    if start_time is not None or end_time is not None:
+        st_val = start_time or 0
+        et_val = f"{end_time} seconds" if end_time else "the end of the audio"
+        time_instruction = f"Transcribe only the audio section from {st_val}s to {et_val}. "
+
+    prompt = (
+        f"You are a verbatim speech-to-text audio transcriber. {time_instruction}"
+        f"Transcribe all speech accurately in {lang_name}. "
+        "Return ONLY the verbatim transcribed text without timestamps, speaker labels, notes, or explanations."
+    )
+    
+    if logger:
+        logger.info(f"[ytdebunk-transcriber] Transcribing speech in {lang_name} via Gemini...")
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[audio_file, prompt]
+    )
+    
+    transcription = (response.text or "").strip()
+    if logger:
+        logger.info(f"[ytdebunk-transcriber] Gemini Cloud ASR complete ({len(transcription)} characters transcribed).")
+    return transcription
+
 def transcribe_audio(
         audio_path=settings.AUDIO_FILE, 
         start_time=None, 
         end_time=None,
         verbose=False,
         language=settings.LANUAGE_DEFAULT,
+        key=None,
         logger=None):
     
-    import torch
-    import torchaudio
-    import librosa
-
     if logger is None:
         logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
         logger = logging.getLogger(__name__)
 
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.INFO)
-        logger.addHandler(console_handler)
+    token = key or os.getenv("GEMINI_API_KEY") or os.getenv("GENAI_API_KEY")
+
+    # Check if PyTorch and audio dependencies are available
+    has_torch = False
+    try:
+        import torch
+        import torchaudio
+        import librosa
+        has_torch = True
+    except (ImportError, Exception):
+        has_torch = False
+
+    if not has_torch:
+        if token:
+            logger.info("[ytdebunk-transcriber] PyTorch not available in this environment. Falling back to Gemini Cloud ASR...")
+            return transcribe_audio_gemini(
+                audio_path=audio_path,
+                start_time=start_time,
+                end_time=end_time,
+                language=language,
+                key=token,
+                logger=logger
+            )
+        else:
+            raise RuntimeError(
+                "PyTorch is not installed in this Python environment and no Gemini API key was provided for Cloud ASR fallback. "
+                "Please configure GEMINI_API_KEY in .env or provide your key in the dashboard."
+            )
 
     model_path = settings.TRANSCRIPTION_MODELS[language]
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

@@ -14,8 +14,8 @@ from ytdebunk.voice import (
 def test_get_default_voice():
     assert get_default_voice("en", "male") == "en-US-GuyNeural"
     assert get_default_voice("en", "female") == "en-US-JennyNeural"
-    assert get_default_voice("bn", "male") == "bn-BD-PradeepNeural"
-    assert get_default_voice("bn", "female") == "bn-BD-NabanitaNeural"
+    assert get_default_voice("bn", "male") == "bn-IN-BashkarNeural"
+    assert get_default_voice("bn", "female") == "bn-IN-TanishaaNeural"
     # Fallback on unknown
     assert get_default_voice("unknown", "male") == "en-US-GuyNeural"
 

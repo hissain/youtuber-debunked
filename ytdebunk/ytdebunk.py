@@ -138,6 +138,7 @@ def main():
                                          start_time=st, 
                                          end_time=et,
                                          language=ln,
+                                         key=token,
                                          logger=logger)
     
     with open(settings.TRANSCRIPTION_FILE, "w", encoding="utf-8") as f:
