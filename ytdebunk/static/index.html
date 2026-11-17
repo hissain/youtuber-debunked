@@ -674,7 +674,10 @@
 
       <!-- Right Panel: Studio Outputs & Inspectors -->
       <div class="glass-card" id="outputPanel">
-        <h2 class="card-title">📊 Debunk Studio Dashboard</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 class="card-title" style="margin-bottom: 0;">📊 Debunk Studio Dashboard</h2>
+          <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 4px 12px;" onclick="loadLatestResults(true)">🔄 Reload Latest Results</button>
+        </div>
 
         <!-- Action / Error Notice Banner -->
         <div id="errorCard" class="glass-card" style="display: none; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08); margin-bottom: 20px; padding: 16px 20px;">
@@ -1074,7 +1077,7 @@
 
         const voiceCont = document.getElementById('voiceAudioContainer');
         voiceCont.innerHTML = '';
-        if (sc.audio_path) {
+        if (data.has_audio || (sc && sc.audio_path)) {
           voiceCont.innerHTML = `
             <div style="background: rgba(12, 16, 23, 0.8); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px;">
               <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-color);">🎙️ FULL DEBUNKER VOICEOVER (Edge-TTS)</span>
@@ -1171,6 +1174,40 @@
       switchTab(activeTabId);
     }
 
+    async function loadLatestResults(userTriggered = false) {
+      try {
+        const res = await fetch('/api/latest');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.has_data) {
+            // Auto-fill configuration fields from the latest session
+            if (data.report) {
+              if (data.report.video_url && (!document.getElementById('videoUrl').value || userTriggered)) {
+                document.getElementById('videoUrl').value = data.report.video_url;
+              }
+              if (data.report.language) {
+                document.getElementById('language').value = data.report.language;
+                document.getElementById('language').dispatchEvent(new Event('change'));
+              }
+            }
+            if (data.script && data.script.persona) {
+              document.getElementById('persona').value = data.script.persona;
+            }
+
+            renderResults(data);
+
+            const statusBox = document.getElementById('statusBox');
+            statusBox.style.display = 'block';
+            statusBox.textContent = `[ytdebunk-studio] Loaded analysis session for: ${data.report?.video_url || 'Target Video'}\nVeracity Score: ${data.report?.overall_veracity_score != null ? data.report.overall_veracity_score + '%' : 'N/A'} • Claims: ${data.report?.claims?.length || 0}\nAudio Voiceover: ${data.has_audio ? 'Available (Edge-TTS)' : 'None'}`;
+          } else if (userTriggered) {
+            alert("No saved results found on the server yet. Run an analysis first!");
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load latest results:", e);
+      }
+    }
+
     // Initialize state on load
     window.addEventListener('DOMContentLoaded', () => {
       const savedKey = localStorage.getItem('ytdebunk_gemini_key');
@@ -1187,6 +1224,7 @@
         updateApiKeyBadge();
       });
       checkServerConfig();
+      loadLatestResults(false);
     });
   </script>
 </body>

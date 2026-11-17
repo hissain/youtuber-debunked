@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 
 # Ensure UTF-8 output streams on Windows to prevent UnicodeEncodeError with cp1252
@@ -121,6 +122,86 @@ def get_config():
         "has_gemini_key": has_env_key,
         "version": "1.5.0",
         "output_directory": settings.OUTPUT_DIRECTORY
+    }
+
+@app.get("/api/latest")
+def get_latest_results():
+    """
+    Returns the most recently generated debunk results from the output directory.
+    Enables automatic dashboard restoration on page load.
+    """
+    out_dir = settings.OUTPUT_DIRECTORY
+    report_file = os.path.join(out_dir, "debunk_report.json")
+    script_file = os.path.join(out_dir, "debunk_script.json")
+    timeline_file = os.path.join(out_dir, "timeline.json")
+    transcript_file = os.path.join(out_dir, "transcription.txt")
+    faults_file = os.path.join(out_dir, "logical_faults.txt")
+    audio_file = os.path.join(out_dir, "debunk_voiceover.mp3")
+
+    has_data = os.path.exists(report_file) or os.path.exists(transcript_file)
+    if not has_data:
+        return {"has_data": False}
+
+    report_data = None
+    if os.path.exists(report_file):
+        try:
+            with open(report_file, "r", encoding="utf-8") as f:
+                report_data = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not read {report_file}: {e}")
+
+    script_data = None
+    if os.path.exists(script_file):
+        try:
+            with open(script_file, "r", encoding="utf-8") as f:
+                script_data = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not read {script_file}: {e}")
+
+    timeline_data = None
+    if os.path.exists(timeline_file):
+        try:
+            with open(timeline_file, "r", encoding="utf-8") as f:
+                timeline_data = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not read {timeline_file}: {e}")
+
+    transcription = ""
+    if os.path.exists(transcript_file):
+        try:
+            with open(transcript_file, "r", encoding="utf-8") as f:
+                transcription = f.read()
+        except Exception as e:
+            logger.warning(f"Could not read {transcript_file}: {e}")
+
+    faults = None
+    if os.path.exists(faults_file):
+        try:
+            with open(faults_file, "r", encoding="utf-8") as f:
+                faults = f.read()
+        except Exception:
+            pass
+
+    # Check for rendered video
+    video_path = None
+    if os.path.exists(out_dir):
+        for fname in os.listdir(out_dir):
+            if fname.endswith(".mp4") and "debunk" in fname:
+                video_path = fname
+                break
+
+    has_audio = os.path.exists(audio_file)
+
+    return {
+        "has_data": True,
+        "report": report_data,
+        "script": script_data,
+        "timeline": timeline_data,
+        "transcription": transcription,
+        "logical_faults": faults,
+        "video_path": video_path,
+        "has_audio": has_audio,
+        "audio_path": "debunk_voiceover.mp3" if has_audio else None
     }
 
 @app.get("/api/logs")

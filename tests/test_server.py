@@ -56,6 +56,24 @@ def test_get_config():
     assert "version" in data
     assert data["status"] == "ready"
 
+def test_get_latest_results(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "OUTPUT_DIRECTORY", str(tmp_path))
+    # No data initially
+    res_empty = client.get("/api/latest")
+    assert res_empty.status_code == 200
+    assert res_empty.json()["has_data"] is False
+
+    # Create dummy report
+    report_file = tmp_path / "debunk_report.json"
+    with open(report_file, "w") as f:
+        f.write('{"overall_veracity_score": 80.0, "video_url": "https://youtube.com/test"}')
+
+    res_with_data = client.get("/api/latest")
+    assert res_with_data.status_code == 200
+    data = res_with_data.json()
+    assert data["has_data"] is True
+    assert data["report"]["overall_veracity_score"] == 80.0
+
 def test_get_logs():
     response = client.get("/api/logs?limit=10")
     assert response.status_code == 200
