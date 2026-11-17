@@ -48,6 +48,42 @@ def test_download_existing_file(tmp_path, monkeypatch):
     assert response.headers["content-type"] == "application/json"
     assert response.json() == {"test": True}
 
+def test_get_config():
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "has_gemini_key" in data
+    assert "version" in data
+    assert data["status"] == "ready"
+
+def test_get_logs():
+    response = client.get("/api/logs?limit=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert "logs" in data
+    assert isinstance(data["logs"], list)
+
+def test_save_key(tmp_path, monkeypatch):
+    dummy_env = str(tmp_path / ".env")
+    monkeypatch.setattr("ytdebunk.server.os.path.join", lambda *args: dummy_env if args[-1] == ".env" else os.path.join(*args))
+    response = client.post("/api/save_key", json={"key": "test-api-key-12345"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert os.environ.get("GEMINI_API_KEY") == "test-api-key-12345"
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+def test_analyze_missing_token_returns_400(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GENAI_API_KEY", raising=False)
+    req_payload = {
+        "video_url": "https://www.youtube.com/watch?v=123",
+        "verify": True,
+        "script": True
+    }
+    response = client.post("/api/analyze", json=req_payload)
+    assert response.status_code == 400
+    assert "Gemini API Key is required" in response.json()["detail"]
+
 @patch("ytdebunk.server.ytdebunk_main")
 def test_analyze_video_endpoint(mock_main):
     mock_report = MagicMock()
@@ -70,6 +106,7 @@ def test_analyze_video_endpoint(mock_main):
         "video_url": "https://www.youtube.com/watch?v=123",
         "language": "en",
         "persona": "skeptic",
+        "token": "mock-test-key",
         "verify": True,
         "script": True,
         "voice": True,
@@ -85,3 +122,4 @@ def test_analyze_video_endpoint(mock_main):
     assert data["report"]["overall_veracity_score"] == 75.0
     assert data["script"]["persona"] == "skeptic"
     assert data["video_path"] == "/path/to/video.mp4"
+    assert "logs" in data

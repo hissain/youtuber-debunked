@@ -308,6 +308,26 @@
       transform: none;
     }
 
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-color);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     /* Results Panel & Tabs */
     .tabs-header {
       display: flex;
@@ -604,8 +624,15 @@
         </div>
 
         <div class="form-group">
-          <label>Gemini API Token (Optional if env set)</label>
-          <input type="password" id="geminiToken" placeholder="Leave blank to use environment key">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0;">Gemini API Token</label>
+            <span id="apiKeyBadge" class="badge" style="font-size: 0.72rem; padding: 2px 8px;">Checking...</span>
+          </div>
+          <input type="password" id="geminiToken" placeholder="Enter Gemini API key (AIzaSy...)">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 0.74rem; color: var(--text-muted);">Required for verification & scriptwriting.</span>
+            <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 3px 8px;" onclick="saveKeyToEnv()">💾 Save to .env</button>
+          </div>
         </div>
 
         <label style="margin-top: 14px;">Pipeline Stages</label>
@@ -646,6 +673,18 @@
       <!-- Right Panel: Studio Outputs & Inspectors -->
       <div class="glass-card" id="outputPanel">
         <h2 class="card-title">📊 Debunk Studio Dashboard</h2>
+
+        <!-- Action / Error Notice Banner -->
+        <div id="errorCard" class="glass-card" style="display: none; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08); margin-bottom: 20px; padding: 16px 20px;">
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <span style="font-size: 1.8rem; line-height: 1;">⚠️</span>
+            <div style="flex: 1;">
+              <h4 id="errorCardTitle" style="color: #f87171; margin-bottom: 4px; font-size: 1rem;">Action Required</h4>
+              <p id="errorCardMsg" style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.5; margin: 0;"></p>
+              <div id="errorCardAction" style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;"></div>
+            </div>
+          </div>
+        </div>
 
         <!-- Tabs -->
         <div class="tabs-header">
@@ -739,13 +778,110 @@
   </div>
 
   <script>
+    let serverHasKey = false;
+    let logPoller = null;
+
     // Tab switcher
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-      event.target.classList.add('active');
+      const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+      if (targetBtn) targetBtn.classList.add('active');
       const targetPane = document.getElementById(tabId);
       if (targetPane) targetPane.classList.add('active');
+    }
+
+    async function checkServerConfig() {
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const data = await res.json();
+          serverHasKey = !!data.has_gemini_key;
+          updateApiKeyBadge();
+        }
+      } catch (e) {
+        console.warn("Could not check server config:", e);
+      }
+    }
+
+    function updateApiKeyBadge() {
+      const badge = document.getElementById('apiKeyBadge');
+      if (!badge) return;
+      const keyVal = document.getElementById('geminiToken').value.trim();
+      if (keyVal.length > 0) {
+        badge.textContent = 'Custom Key Ready';
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+        badge.style.color = '#34d399';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+      } else if (serverHasKey) {
+        badge.textContent = 'Active in .env';
+        badge.style.background = 'rgba(6, 182, 212, 0.15)';
+        badge.style.color = '#38bdf8';
+        badge.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      } else {
+        badge.textContent = 'Key Required for AI';
+        badge.style.background = 'rgba(245, 158, 11, 0.15)';
+        badge.style.color = '#fbbf24';
+        badge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+      }
+      badge.style.display = 'inline-block';
+    }
+
+    async function saveKeyToEnv() {
+      const key = document.getElementById('geminiToken').value.trim();
+      if (!key) {
+        alert("Please enter a Gemini API key in the field first.");
+        return;
+      }
+      try {
+        const res = await fetch('/api/save_key', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          serverHasKey = true;
+          updateApiKeyBadge();
+          alert("Key saved to .env successfully! AI pipelines are now enabled.");
+        } else {
+          alert("Error: " + (data.detail || "Could not save key"));
+        }
+      } catch (e) {
+        alert("Error saving key: " + e.message);
+      }
+    }
+
+    function showErrorBanner(title, msg) {
+      const card = document.getElementById('errorCard');
+      document.getElementById('errorCardTitle').textContent = title;
+      document.getElementById('errorCardMsg').textContent = msg;
+      
+      const act = document.getElementById('errorCardAction');
+      act.innerHTML = '';
+      if (msg.toLowerCase().includes('gemini') || msg.toLowerCase().includes('key') || msg.toLowerCase().includes('token')) {
+        act.innerHTML = `
+          <button type="button" class="btn-submit" style="width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="document.getElementById('geminiToken').focus(); document.getElementById('geminiToken').scrollIntoView({behavior:'smooth'});">🔑 Enter Gemini API Key</button>
+          <button type="button" class="btn-secondary" style="font-size: 0.8rem; padding: 8px 16px;" onclick="runTranscriptOnly()">📜 Run Subtitles / Audio Only (No AI Key)</button>
+        `;
+      }
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideErrorBanner() {
+      const card = document.getElementById('errorCard');
+      if (card) card.style.display = 'none';
+    }
+
+    function runTranscriptOnly() {
+      document.getElementById('chkVerify').checked = false;
+      document.getElementById('chkScript').checked = false;
+      document.getElementById('chkVoice').checked = false;
+      document.getElementById('chkSync').checked = false;
+      document.getElementById('chkVideo').checked = false;
+      hideErrorBanner();
+      launchDebunkStudio();
     }
 
     // Dynamic voice selector based on language
@@ -769,9 +905,22 @@
     });
 
     async function launchDebunkStudio() {
+      hideErrorBanner();
       const videoUrl = document.getElementById('videoUrl').value.trim();
       if (!videoUrl) {
         alert("Please enter a valid YouTube video URL.");
+        return;
+      }
+
+      const tokenInput = document.getElementById('geminiToken').value.trim();
+      const needsAi = document.getElementById('chkVerify').checked ||
+                      document.getElementById('chkScript').checked;
+
+      if (needsAi && !tokenInput && !serverHasKey) {
+        showErrorBanner(
+          "Gemini API Key Required",
+          "Verification, persona scriptwriting, and fallacy detection require a Gemini API Key. Please enter your key in the 'Gemini API Token' field on the left, or click below to run caption/transcription extraction only."
+        );
         return;
       }
 
@@ -790,7 +939,7 @@
         persona: document.getElementById('persona').value,
         voice_name: document.getElementById('voiceName').value,
         aspect_ratio: document.getElementById('aspectRatio').value,
-        token: document.getElementById('geminiToken').value.trim() || null,
+        token: tokenInput || null,
         verify: document.getElementById('chkVerify').checked,
         script: document.getElementById('chkScript').checked,
         voice: document.getElementById('chkVoice').checked,
@@ -799,8 +948,23 @@
         force_asr: document.getElementById('chkForceAsr').checked
       };
 
+      // Poll server logs for real-time progress
+      if (logPoller) clearInterval(logPoller);
+      logPoller = setInterval(async () => {
+        try {
+          const lres = await fetch('/api/logs?limit=40');
+          if (lres.ok) {
+            const ldata = await lres.json();
+            if (ldata.logs && ldata.logs.length > 0) {
+              statusBox.textContent = ldata.logs.join('\n');
+              statusBox.scrollTop = statusBox.scrollHeight;
+            }
+          }
+        } catch (e) {}
+      }, 1500);
+
       try {
-        statusBox.textContent += `[ytdebunk-studio] Probing captions and analyzing claims...\n`;
+        statusBox.textContent += `[ytdebunk-studio] Dispatched request to pipeline...\n`;
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -808,15 +972,29 @@
         });
 
         const data = await res.json();
+        if (logPoller) {
+          clearInterval(logPoller);
+          logPoller = null;
+        }
+
         if (!res.ok) {
           throw new Error(data.detail || "Server error processing request");
         }
 
-        statusBox.textContent += `[ytdebunk-studio] Studio pipeline completed successfully!\n`;
+        if (data.logs && data.logs.length > 0) {
+          statusBox.textContent = data.logs.join('\n');
+          statusBox.scrollTop = statusBox.scrollHeight;
+        }
+        statusBox.textContent += `\n[ytdebunk-studio] Studio pipeline completed successfully!\n`;
         renderResults(data);
       } catch (err) {
-        statusBox.textContent += `[ERROR] ${err.message}\n`;
-        alert(`Error: ${err.message}`);
+        if (logPoller) {
+          clearInterval(logPoller);
+          logPoller = null;
+        }
+        statusBox.textContent += `\n[ERROR] ${err.message}\n`;
+        statusBox.scrollTop = statusBox.scrollHeight;
+        showErrorBanner("Pipeline Stopped", err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>🚀 Launch Studio Pipeline</span>`;
@@ -825,9 +1003,13 @@
 
     function renderResults(data) {
       document.getElementById('placeholderState').style.display = 'none';
+      hideErrorBanner();
+
+      let activeTabId = 'tabTranscript';
 
       // 1. Report
       if (data.report) {
+        activeTabId = 'tabReport';
         const rep = data.report;
         const score = rep.overall_veracity_score || 50;
         const scoreColor = score >= 70 ? 'var(--accent-color)' : (score >= 40 ? 'var(--accent-orange)' : 'var(--accent-red)');
@@ -982,7 +1164,28 @@
       if (data.transcription) {
         document.getElementById('rawTranscript').value = data.transcription;
       }
+
+      // Activate corresponding tab
+      switchTab(activeTabId);
     }
+
+    // Initialize state on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem('ytdebunk_gemini_key');
+      if (savedKey) {
+        document.getElementById('geminiToken').value = savedKey;
+      }
+      document.getElementById('geminiToken').addEventListener('input', (e) => {
+        const v = e.target.value.trim();
+        if (v) {
+          localStorage.setItem('ytdebunk_gemini_key', v);
+        } else {
+          localStorage.removeItem('ytdebunk_gemini_key');
+        }
+        updateApiKeyBadge();
+      });
+      checkServerConfig();
+    });
   </script>
 </body>
 </html>

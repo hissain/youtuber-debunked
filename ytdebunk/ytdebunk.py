@@ -60,9 +60,10 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
     logger = logging.getLogger(__name__)
 
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    logger.addHandler(console_handler)
+    if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
 
     if args.verbose:
         logger.info(f"[ytdebunk] Analyzing YouTube video: {args.yt_video_url}")
